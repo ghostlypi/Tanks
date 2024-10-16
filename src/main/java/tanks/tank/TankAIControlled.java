@@ -9,10 +9,7 @@ import tanks.network.event.*;
 import tanks.obstacle.Obstacle;
 import tanks.obstacle.ObstacleTeleporter;
 import tanks.registry.RegistryTank;
-import tanks.tankson.Property;
-import tanks.tankson.Serializer;
-import tanks.tankson.TanksON;
-import tanks.tankson.TanksONable;
+import tanks.tankson.*;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -2914,6 +2911,8 @@ public class TankAIControlled extends Tank
 	@Override
 	public String toString()
 	{
+		System.out.println(TankBytes.eat(TankBytes.bake(Serializer.toMap(this))));
+		System.out.println(Serializer.toTanksON(this));
 		return Serializer.toTanksON(this);
 //		return TanksON.objectToString(this);
 //		try
@@ -2957,6 +2956,7 @@ public class TankAIControlled extends Tank
 
 	public static TankAIControlled fromString(String s)
 	{
+		ArrayList<Object> a = new ArrayList<>();
 		if (s.startsWith("{"))
 			return (TankAIControlled) Serializer.fromTanksON(s);
 //			return (TankAIControlled) TanksON.parseObject(s);

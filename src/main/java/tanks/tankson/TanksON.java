@@ -241,10 +241,10 @@ public class TanksON
             s.append("]");
             return s.toString();
         }
-        else if (o instanceof HashMap)
+        else if (o instanceof Map)
         {
             StringBuilder s = new StringBuilder("{");
-            HashMap<?, ?> h = ((HashMap<?, ?>) o);
+            Map<?, ?> h = ((Map<?, ?>) o);
 
             ArrayList<String> keys = new ArrayList<String>((Collection<? extends String>) h.keySet());
             if (keys.remove("name"))
