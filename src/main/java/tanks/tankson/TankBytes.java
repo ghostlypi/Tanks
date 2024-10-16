@@ -186,7 +186,6 @@ public class TankBytes {
             for (Object el : (AbstractCollection<?>) o) {
                 c.addAll(bakeList(el));
             }
-            c.removeLast();
             c.add((byte) Delim.ARRAY.ordinal());
             return c;
         } else if (o instanceof Map) {
