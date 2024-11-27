@@ -9,6 +9,7 @@ import tanks.gui.screen.*;
 import tanks.item.Item;
 import tanks.item.ItemMine;
 import tanks.minigames.Minigame;
+import tanks.minigames.TankBall;
 import tanks.network.event.*;
 import tanks.obstacle.Obstacle;
 import tanks.tankson.ICopyable;
@@ -148,6 +149,10 @@ public class Explosion extends Movable implements ICopyable<Explosion>, ITanksON
 
                         if (t instanceof TankPlayerRemote)
                             Game.eventsOut.add(new EventTankControllerAddVelocity(t, t.vX - vX, t.vY - vY, t.tookRecoil));
+                    }
+                    else if (m instanceof TankBall.Ball) {
+                        double angle = this.getAngleInDirection(m.posX, m.posY);
+                        m.addPolarMotion(angle, power * 5 * Math.pow(Game.tile_size, 2) / Math.max(1, Math.pow(((TankBall.Ball) m).size, 2)));
                     }
                 }
 

@@ -7,6 +7,7 @@ import tanks.gui.screen.ScreenEditorBullet;
 import tanks.gui.screen.ScreenEditorMine;
 import tanks.gui.screen.ScreenPartyLobby;
 import tanks.item.ItemMine;
+import tanks.minigames.TankBall;
 import tanks.network.event.EventMineChangeTimer;
 import tanks.network.event.EventMineRemove;
 import tanks.tankson.*;
@@ -210,6 +211,10 @@ public class Mine extends Movable implements IAvoidObject, IDrawableLightSource,
                         allyNear = true;
                     else
                         enemyNear = true;
+                }
+                else if (m instanceof TankBall.Ball) {
+                    allyNear = false;
+                    enemyNear = true;
                 }
             }
         }

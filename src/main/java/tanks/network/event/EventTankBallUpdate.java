@@ -1,10 +1,12 @@
 package tanks.network.event;
 
 import io.netty.buffer.ByteBuf;
+import tanks.Game;
 import tanks.minigames.TankBall;
 import tanks.tank.Tank;
+import tanks.tank.TankLightBlue;
 
-public class EventTankBallUpdate extends PersonalEvent implements IStackableEvent {
+public class EventTankBallUpdate extends PersonalEvent {
 
     public int ball;
     public double posX;
@@ -27,9 +29,6 @@ public class EventTankBallUpdate extends PersonalEvent implements IStackableEven
     }
 
     @Override
-    public int getIdentifier() {return this.ball;}
-
-    @Override
     public void write(ByteBuf b) {
         b.writeInt(this.ball);
         b.writeDouble(this.posX);
@@ -50,7 +49,7 @@ public class EventTankBallUpdate extends PersonalEvent implements IStackableEven
     @Override
     public void execute() {
         if (this.clientID == null) {
-            TankBall.Ball b = TankBall.Ball.idMap.get(this.ball);
+            TankBall.Ball b = TankBall.Ball.ball;
             if (b != null) {
                 b.posX = this.posX;
                 b.posY = this.posY;

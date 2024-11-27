@@ -404,6 +404,7 @@ public class Game
 		NetworkEventMap.register(EventArcadeFrenzy.class);
 		NetworkEventMap.register(EventArcadeEnd.class);
 		NetworkEventMap.register(EventArcadeBonuses.class);
+		NetworkEventMap.register(EventStartTankBall.class);
 		NetworkEventMap.register(EventTankBallUpdate.class);
 
 		NetworkEventMap.register(EventSendOnlineClientDetails.class);
