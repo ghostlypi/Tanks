@@ -91,6 +91,7 @@ public class TankBall extends Minigame {
         @Override
         public void draw() {
             Model m = Drawing.drawing.createModel("/models/tankball/");
+            Drawing.drawing.setColor(255,255,255);
             Drawing.drawing.drawModel(m, this.posX, this.posY, Game.tile_size, Game.tile_size, 0);
         }
 
