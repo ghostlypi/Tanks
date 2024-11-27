@@ -561,6 +561,7 @@ public class Game
 
 		registerMinigame(ArcadeClassic.class, "Arcade mode", "A gamemode which gets crazier as you---destroy more tanks.------Featuring a score mechanic, unlimited---lives, a time limit, item drops, and---end-game bonuses!");
 		registerMinigame(ArcadeBeatBlocks.class, "Beat arcade mode", "Arcade mode but with beat blocks!");
+		registerMinigame(TankBall.class, "Tank Ball", "Football but with Tanks");
 
 //		registerMinigame(TeamDeathmatch.class, "Team deathmatch", "something");
 
