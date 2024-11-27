@@ -1,23 +1,34 @@
 package tanks.minigames;
 
+import jdk.internal.foreign.abi.Binding;
 import tanks.Drawing;
 import tanks.Game;
 import tanks.Movable;
 import tanks.Team;
 import tanks.bullet.Bullet;
+import tanks.gui.screen.ScreenPartyHost;
+import tanks.gui.screen.ScreenPartyLobby;
+import tanks.network.event.EventTankBallUpdate;
 import tanks.obstacle.Obstacle;
 import tanks.tank.Tank;
 import tanks.tankson.Property;
+
+import java.util.HashMap;
 
 public class TankBall extends Minigame {
 
     public static class Ball extends Movable {
 
         public double size;
+        public int id;
+        public static int idCounter = 0;
+        public static HashMap<Integer, Ball> idMap = new HashMap<>();
 
         public Ball(double x, double y, double size) {
             super(x,y);
             this.size = size;
+            this.id = idCounter++;
+            idMap.put(this.id, this);
         }
 
         @Override
@@ -84,6 +95,8 @@ public class TankBall extends Minigame {
 
             //Update position
             super.update();
+            if (ScreenPartyHost.isServer)
+                Game.eventsOut.add(new EventTankBallUpdate(this));
         }
 
         @Override
@@ -101,30 +114,42 @@ public class TankBall extends Minigame {
     }
 
     @Override
+    public void update() {
+        if (!ScreenPartyLobby.isClient) {
+            super.update();
+            for (Movable m : Game.movables)
+                if (m instanceof Bullet)
+                    ((Bullet) m).damage = 0;
+        }
+    }
+
+    @Override
     public boolean levelEnded(){
-        Team red = this.teamsMap.get("red");
-        Team blue = this.teamsMap.get("blue");
-        for (Movable m : Game.movables) {
-            if (m instanceof Ball) {
-                Ball b = (Ball) m;
-                if (b.posX - b.size/2 > (Game.currentSizeX * Game.tile_size)) {
-                    for (Movable p : Game.movables) {
-                        if (p instanceof Tank) {
-                            if (p.team.equals(blue)) {
-                                ((Tank) p).health = 0;
+        if (!ScreenPartyLobby.isClient) {
+            Team red = this.teamsMap.get("red");
+            Team blue = this.teamsMap.get("blue");
+            for (Movable m : Game.movables) {
+                if (m instanceof Ball) {
+                    Ball b = (Ball) m;
+                    if (b.posX - b.size / 2 > (Game.currentSizeX * Game.tile_size)) {
+                        for (Movable p : Game.movables) {
+                            if (p instanceof Tank) {
+                                if (p.team.equals(blue)) {
+                                    ((Tank) p).health = 0;
+                                }
                             }
                         }
-                    }
-                    return true;
-                } else if ((b.posX + b.size/2 <= 0)) {
-                    for (Movable p : Game.movables) {
-                        if (p instanceof Tank) {
-                            if (p.team.equals(red)) {
-                                ((Tank) p).health = 0;
+                        return true;
+                    } else if ((b.posX + b.size / 2 <= 0)) {
+                        for (Movable p : Game.movables) {
+                            if (p instanceof Tank) {
+                                if (p.team.equals(red)) {
+                                    ((Tank) p).health = 0;
+                                }
                             }
                         }
+                        return true;
                     }
-                    return true;
                 }
             }
         }
