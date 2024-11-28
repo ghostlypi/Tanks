@@ -23,6 +23,7 @@ public class TankBall extends Minigame {
         public int id;
         public static int idCounter = 0;
         public static Ball ball;
+        private double angle;
 
         public Ball(double x, double y, double size) {
             super(x,y);
@@ -79,8 +80,8 @@ public class TankBall extends Minigame {
             }
 
             //Apply Friction
-            this.vX *= 1 - 0.003;
-            this.vY *= 1 - 0.003;
+            this.vX *= Math.pow(1 - 0.003, Panel.frameFrequency);
+            this.vY *= Math.pow(1 - 0.003, Panel.frameFrequency);
 
             //Update position
             super.update();
@@ -92,7 +93,11 @@ public class TankBall extends Minigame {
         public void draw() {
             Model m = Drawing.drawing.createModel("/models/tankball/");
             Drawing.drawing.setColor(255,255,255);
-            Drawing.drawing.drawModel(m, this.posX, this.posY, Game.tile_size, Game.tile_size, 0);
+            if (this.vX > 0)
+                this.angle += Math.sqrt((this.posX - this.lastPosX)*(this.posX - this.lastPosX) + (this.posY - this.lastPosY)*(this.posY - this.lastPosY))/Game.tile_size;
+            else
+                this.angle -= Math.sqrt((this.posX - this.lastPosX)*(this.posX - this.lastPosX) + (this.posY - this.lastPosY)*(this.posY - this.lastPosY))/Game.tile_size;
+            Drawing.drawing.drawModel(m, this.posX, this.posY, Game.tile_size/2, Game.tile_size, Game.tile_size, Game.tile_size, this.angle);
         }
 
         public void execute_spherical_collision(Bullet m) {
