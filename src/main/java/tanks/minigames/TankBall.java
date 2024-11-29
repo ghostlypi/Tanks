@@ -25,7 +25,8 @@ public class TankBall extends Minigame {
         public int id;
         public static int idCounter = 0;
         public static Ball ball;
-        private double angle;
+        private double xangle;
+        private double yangle;
 
         public Ball(double x, double y, double size) {
             super(x,y);
@@ -95,11 +96,9 @@ public class TankBall extends Minigame {
         public void draw() {
             Model m = Drawing.drawing.createModel("/models/tankball/");
             Drawing.drawing.setColor(255,255,255);
-            if (this.vX > 0)
-                this.angle += Math.sqrt((this.posX - this.lastPosX)*(this.posX - this.lastPosX) + (this.posY - this.lastPosY)*(this.posY - this.lastPosY))/Game.tile_size;
-            else
-                this.angle -= Math.sqrt((this.posX - this.lastPosX)*(this.posX - this.lastPosX) + (this.posY - this.lastPosY)*(this.posY - this.lastPosY))/Game.tile_size;
-            Drawing.drawing.drawModel(m, this.posX, this.posY, Game.tile_size/2, Game.tile_size, Game.tile_size, Game.tile_size, this.angle);
+            this.yangle -= (this.posX - this.lastPosX)/Game.tile_size;
+            this.xangle -= (this.posY - this.lastPosY)/Game.tile_size;
+            Drawing.drawing.drawModel(m, this.posX, this.posY, Game.tile_size/2, Game.tile_size, Game.tile_size, Game.tile_size, this.xangle, this.yangle, 0);
         }
 
         public void execute_spherical_collision(Bullet m) {
@@ -190,12 +189,22 @@ public class TankBall extends Minigame {
                 } else if (m instanceof Ball) {
                     Ball b = (Ball) m;
                     if (b.posX - b.size / 2 > (Game.currentSizeX * Game.tile_size)) {
+                        for (Movable n : Game.movables)
+                            if (n instanceof Bullet)
+                                ((Bullet) n).destroy=true;
+                            else if (n instanceof Mine)
+                                ((Mine) n).explode();
                         this.redTeamScore++;
                         b.posX = Game.tile_size*this.sizeX/2;
                         b.posY = Game.tile_size*this.sizeY/2;
                         b.vX = 0;
                         b.vY = 0;
                     } else if ((b.posX + b.size / 2 <= 0)) {
+                        for (Movable n : Game.movables)
+                            if (n instanceof Bullet)
+                                ((Bullet) n).destroy=true;
+                            else if (n instanceof Mine)
+                                ((Mine) n).explode();
                         this.blueTeamScore++;
                         b.posX = Game.tile_size*this.sizeX/2;
                         b.posY = Game.tile_size*this.sizeY/2;
