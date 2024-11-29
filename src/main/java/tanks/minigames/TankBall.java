@@ -8,10 +8,12 @@ import tanks.gui.screen.ScreenPartyHost;
 import tanks.gui.screen.ScreenPartyLobby;
 import tanks.network.event.EventStartTankBall;
 import tanks.network.event.EventTankBallUpdate;
+import tanks.network.event.EventTankBallUpdateScore;
 import tanks.obstacle.Obstacle;
 import tanks.tank.Mine;
 import tanks.tank.Tank;
 import tanks.tankson.Property;
+import tanks.translation.Translation;
 
 import java.util.HashMap;
 
@@ -131,7 +133,7 @@ public class TankBall extends Minigame {
             double theirDir = m.getPolarDirection();
 
             double ourMass = this.size * this.size;
-            double theirMass = m.size * m.size * 3;
+            double theirMass = m.size * m.size;
 
             double co1 = (ourSpeed * Math.cos(ourDir - toAngle) * (ourMass - theirMass) + 2 * theirMass * theirSpeed * Math.cos(theirDir - toAngle)) / Math.max(1, ourMass + theirMass);
             double vX1 = co1 * Math.cos(toAngle) + ourSpeed * Math.sin(ourDir - toAngle) * Math.cos(toAngle + Math.PI / 2);
@@ -149,6 +151,9 @@ public class TankBall extends Minigame {
             this.posY += this.vY;
         }
     }
+
+    public int redTeamScore;
+    public int blueTeamScore;
 
     public static String generateLevelString(){
         int h;
@@ -170,6 +175,8 @@ public class TankBall extends Minigame {
         Game.movables.add(ball);
         if (ScreenPartyHost.isServer)
             Game.eventsOut.add(new EventStartTankBall(this));
+        this.redTeamScore = 0;
+        this.blueTeamScore = 0;
     }
 
     @Override
@@ -180,38 +187,67 @@ public class TankBall extends Minigame {
                 if (m instanceof Tank) {
                     ((Tank) m).resistBullets = true;
                     ((Tank) m).resistExplosions = true;
+                } else if (m instanceof Ball) {
+                    Ball b = (Ball) m;
+                    if (b.posX - b.size / 2 > (Game.currentSizeX * Game.tile_size)) {
+                        this.redTeamScore++;
+                        b.posX = Game.tile_size*this.sizeX/2;
+                        b.posY = Game.tile_size*this.sizeY/2;
+                        b.vX = 0;
+                        b.vY = 0;
+                    } else if ((b.posX + b.size / 2 <= 0)) {
+                        this.blueTeamScore++;
+                        b.posX = Game.tile_size*this.sizeX/2;
+                        b.posY = Game.tile_size*this.sizeY/2;
+                        b.vX = 0;
+                        b.vY = 0;
+                    }
+                    if (ScreenPartyHost.isServer)
+                        Game.eventsOut.add(new EventTankBallUpdateScore(this));
                 }
         }
     }
 
     @Override
-    public boolean levelEnded(){
+    public void draw() {
+        super.draw();
+        Drawing.drawing.setColor(255,255,255);
+        double posX = Drawing.drawing.interfaceSizeX / 2;
+        double posY = 50;
+
+        String s = this.redTeamScore+"-"+this.blueTeamScore;
+        Drawing.drawing.setInterfaceFontSize(36 * (1 + 0.25 * 1.5));
+        double size = Game.game.window.fontRenderer.getStringSizeX(Drawing.drawing.fontSize, s) / Drawing.drawing.interfaceScale;
+        Drawing.drawing.displayInterfaceText(posX - size / 2, posY, false, s);
+    }
+
+    @Override
+    public boolean levelEnded() {
         if (!ScreenPartyLobby.isClient) {
             Team red = this.teamsMap.get("red");
             Team blue = this.teamsMap.get("blue");
-            for (Movable m : Game.movables) {
-                if (m instanceof Ball) {
-                    Ball b = (Ball) m;
-                    if (b.posX - b.size / 2 > (Game.currentSizeX * Game.tile_size)) {
-                        for (Movable p : Game.movables) {
-                            if (p instanceof Tank) {
-                                if (p.team.equals(blue)) {
-                                    ((Tank) p).health = 0;
-                                }
-                            }
+            if (this.redTeamScore > this.blueTeamScore
+                    && this.redTeamScore >= 5
+                    && this.redTeamScore - this.blueTeamScore >= 2) {
+                for (Movable p : Game.movables) {
+                    if (p instanceof Tank) {
+                        if (p.team.equals(blue)) {
+                            ((Tank) p).health = 0;
                         }
-                        return true;
-                    } else if ((b.posX + b.size / 2 <= 0)) {
-                        for (Movable p : Game.movables) {
-                            if (p instanceof Tank) {
-                                if (p.team.equals(red)) {
-                                    ((Tank) p).health = 0;
-                                }
-                            }
-                        }
-                        return true;
                     }
                 }
+                return true;
+            } else if (this.blueTeamScore > this.redTeamScore
+                    && this.blueTeamScore >= 5
+                    && this.blueTeamScore - this.redTeamScore >= 2) {
+                for (Movable p : Game.movables) {
+                    if (p instanceof Tank) {
+                        if (p.team.equals(red)) {
+                            ((Tank) p).health = 0;
+                        }
+                    }
+                }
+                return true;
             }
         }
         return false;

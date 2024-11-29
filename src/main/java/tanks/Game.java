@@ -406,6 +406,7 @@ public class Game
 		NetworkEventMap.register(EventArcadeBonuses.class);
 		NetworkEventMap.register(EventStartTankBall.class);
 		NetworkEventMap.register(EventTankBallUpdate.class);
+		NetworkEventMap.register(EventTankBallUpdateScore.class);
 
 		NetworkEventMap.register(EventSendOnlineClientDetails.class);
 		NetworkEventMap.register(EventSilentDisconnect.class);
