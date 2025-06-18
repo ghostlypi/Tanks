@@ -12,14 +12,21 @@ import tanks.obstacle.Obstacle;
 import tanks.obstacle.ObstacleBeatBlock;
 import tanks.registry.RegistryTank;
 import tanks.tank.*;
+import tanks.tankson.Property;
+import tanks.tankson.Serializer;
+import tanks.tankson.TanksON;
+import tanks.tankson.TanksONable;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
+@TanksONable("level")
 public class Level 
 {
 	public String levelString;
 
-	public String[] preset;
+	@Property(id = "preset", name = "Preset")
+	public ArrayList<String> preset;
 	public String[] screen;
 	public String[] obstaclesPos;
 	public String[] tanks;
@@ -79,9 +86,16 @@ public class Level
 
 	public ArrayList<Player> includedPlayers = new ArrayList<>();
 
+	@Property(id = "starting_coins", name = "Starting Coins")
 	public int startingCoins;
+
+	@Property( id = "shop", name = "Shop")
 	public ArrayList<Item.ShopItem> shop = new ArrayList<>();
+
+	@Property( id = "starting_items", name = "Starting Items")
 	public ArrayList<Item.ItemStack<?>> startingItems = new ArrayList<>();
+
+	@Property(id = "player_builds", name = "Player Builds")
 	public ArrayList<TankPlayer.ShopTankBuild> playerBuilds = new ArrayList<>();
 
 	// Saved on the client to keep track of what each item is
@@ -89,6 +103,7 @@ public class Level
 	public ArrayList<Item.ShopItem> clientShop = new ArrayList<>();
 	public ArrayList<Item.ItemStack<?>> clientStartingItems = new ArrayList<>();
 
+	@Property(id = "custom_tanks", name = "Custom Tanks")
 	public ArrayList<TankAIControlled> customTanks = new ArrayList<>();
 
 	public HashMap<String, Integer> itemNumbers = new HashMap<>();
@@ -101,7 +116,9 @@ public class Level
 
 	public HashMap<String, Tank> tankLookupTable = null;
 
-	/**
+	public Level() {}
+
+	/** [LEGACY] DEFINITION -- LEVEL FILES NOW USE TANKSON!
 	 * A level string is structured like this:
 	 * (parentheses signify required parameters, and square brackets signify optional parameters. 
 	 * Asterisks indicate that the parameter can be repeated, separated by commas
@@ -115,6 +132,91 @@ public class Level
 
 		this.levelString = level.replaceAll("\u0000", "");
 
+		if (level.startsWith("!TanksON\n")) {
+			this.levelString = this.levelString.substring("!TanksON\n".length());
+			Level l = Level.parse_TanksON(this.levelString);
+			Field[] fields = this.getClass().getDeclaredFields();
+			for (Field field : fields) {
+				field.setAccessible(true);
+				try {
+					field.set(this, field.get(l));
+				} catch (IllegalAccessException e) {}
+			}
+		} else {
+			parse_trad(this.levelString);
+		}
+	}
+
+	public static Level parse_TanksON(String level) {
+		Level l = (Level) Serializer.fromTanksON(level);
+
+		l.screen = l.preset.get(0).split(",");
+		l.obstaclesPos = l.preset.get(1).split(",");
+		l.tanks = l.preset.get(2).split(",");
+
+		if (l.preset.size() >= 4)
+		{
+			l.teams = l.preset.get(3).split(",");
+			l.enableTeams = true;
+		}
+
+		if (l.screen[0].startsWith("*"))
+		{
+			l.editable = false;
+			l.screen[0] = l.screen[0].substring(1);
+		}
+
+		if (l.playerBuilds.isEmpty())
+		{
+			TankPlayer.ShopTankBuild tp = new TankPlayer.ShopTankBuild();
+			l.playerBuilds.add(tp);
+		}
+
+		if (ScreenPartyHost.isServer && Game.disablePartyFriendlyFire)
+			l.disableFriendlyFire = true;
+
+		l.sizeX = Integer.parseInt(l.screen[0]);
+		l.sizeY = Integer.parseInt(l.screen[1]);
+
+		if (l.screen.length >= 5)
+		{
+			l.colorR = Integer.parseInt(l.screen[2]);
+			l.colorG = Integer.parseInt(l.screen[3]);
+			l.colorB = Integer.parseInt(l.screen[4]);
+
+			if (l.screen.length >= 8)
+			{
+				l.colorVarR = Math.min(255 - l.colorR, Integer.parseInt(l.screen[5]));
+				l.colorVarG = Math.min(255 - l.colorG, Integer.parseInt(l.screen[6]));
+				l.colorVarB = Math.min(255 - l.colorB, Integer.parseInt(l.screen[7]));
+			}
+		}
+
+		for (int i = 0; i < l.shop.size(); i++)
+		{
+			l.itemNumbers.put(l.shop.get(i).itemStack.item.name, i + 1);
+		}
+
+		for (int i = 0; i < l.startingItems.size(); i++)
+		{
+			l.itemNumbers.put(l.startingItems.get(i).item.name, l.shop.size() + i + 1);
+		}
+
+		if (ScreenPartyLobby.isClient)
+		{
+			l.clientStartingCoins = l.startingCoins;
+			l.clientStartingItems = l.startingItems;
+			l.clientShop = l.shop;
+
+			l.startingCoins = 0;
+			l.startingItems = new ArrayList<>();
+			l.shop = new ArrayList<>();
+		}
+
+		return l;
+	}
+
+	public void parse_trad(String level) {
 		int parsing = 0;
 
 		String[] lines = this.levelString.split("\n");
@@ -144,14 +246,14 @@ public class Level
 				default:
 					if (parsing == 0)
 					{
-						preset = s.substring(s.indexOf('{') + 1, s.indexOf('}')).split("\\|");
-						screen = preset[0].split(",");
-						obstaclesPos = preset[1].split(",");
-						tanks = preset[2].split(",");
+						preset = new ArrayList<>(Arrays.asList(s.substring(s.indexOf('{') + 1, s.indexOf('}')).split("\\|")));
+						screen = preset.get(0).split(",");
+						obstaclesPos = preset.get(1).split(",");
+						tanks = preset.get(2).split(",");
 
-						if (preset.length >= 4)
+						if (preset.size() >= 4)
 						{
-							teams = preset[3].split(",");
+							teams = preset.get(3).split(",");
 							enableTeams = true;
 						}
 
@@ -454,7 +556,7 @@ public class Level
 
 		ArrayList<Tank> tanksToRemove = new ArrayList<>();
 
-		if (!preset[2].isEmpty())
+		if (!preset.get(2).isEmpty())
 		{
 			for (String s : tanks)
 			{

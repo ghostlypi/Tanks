@@ -1690,7 +1690,36 @@ public class ScreenLevelEditor extends Screen implements ILevelPreviewScreen
 		this.save(this.name);
 	}
 
-	public void save(String levelName)
+	public void save(String levelName) {
+
+		Game.currentLevelString = "!TanksON\n" + Serializer.toTanksON(this.level);
+
+		BaseFile file = Game.game.fileManager.getFile(Game.homedir + Game.levelDir + "/" + levelName);
+		if (file.exists())
+		{
+			if (!this.level.editable)
+			{
+				return;
+			}
+
+			file.delete();
+		}
+
+		try
+		{
+			file.create();
+
+			file.startWriting();
+			file.println("!TanksON\n" + Serializer.toTanksON(this.level));
+			file.stopWriting();
+		}
+		catch (IOException e)
+		{
+			Game.exitToCrash(e);
+		}
+	}
+
+	public void legacy_save(String levelName)
 	{
 		StringBuilder level = new StringBuilder("{");
 

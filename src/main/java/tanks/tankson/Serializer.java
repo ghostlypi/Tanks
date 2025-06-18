@@ -1,6 +1,7 @@
 package tanks.tankson;
 
 import tanks.Game;
+import tanks.Level;
 import tanks.bullet.Bullet;
 import tanks.item.Item;
 import tanks.tank.*;
@@ -328,6 +329,11 @@ public final class Serializer
             case "tank_ref": {
                 processed.add("tank");
                 o = new TankReference((String) m.get("tank"));
+                break;
+            }
+            case "level" : {
+                processed.add("level");
+                o = new Level();
                 break;
             }
             default:
