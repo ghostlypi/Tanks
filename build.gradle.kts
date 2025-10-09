@@ -56,6 +56,9 @@ dependencies {
     implementation(files("libs/steamworks4j-lwjgl3-1.10.0-SNAPSHOT.jar"))
 //    api("com.code-disaster.steamworks4j:steamworks4j:1.10.0-SNAPSHOT")
 //    api("com.code-disaster.steamworks4j:steamworks4j-lwjgl3:1.10.0-SNAPSHOT")
+
+    //Temp import for jspecify for now (will hopefully remove later)
+    implementation("org.jspecify:jspecify:1.0.0")
 }
 
 group = "com.aehmttw"
