@@ -119,8 +119,10 @@ public final class TruetypeOversample {
 
             glBindTexture(GL_TEXTURE_2D, font_tex);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, BITMAP_W, BITMAP_H, 0, GL_ALPHA, GL_UNSIGNED_BYTE, bitmap);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -131,6 +133,7 @@ public final class TruetypeOversample {
         glDisable(GL_TEXTURE_2D);
         glDisable(GL_LIGHTING);
         glDisable(GL_DEPTH_TEST);
+        glDisable(GL_DITHER);
 
         glViewport(0, 0, fbw, fbh);
         if (black_on_white) {

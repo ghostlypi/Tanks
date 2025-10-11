@@ -296,4 +296,4 @@ abstract class FontDemo {
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
     }
 
-}
+}		//this.fontRenderer = new NeoFontRenderer(this, "/fonts/Bullet.ttf"); // EXPERIMENTAL

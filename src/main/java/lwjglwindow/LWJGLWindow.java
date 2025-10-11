@@ -219,7 +219,9 @@ public class LWJGLWindow extends BaseWindow
 		GL.createCapabilities();
 
 		// Initialize font renderer after OpenGL context is created
-        this.fontRenderer = new FontRenderer(this, "/fonts/default/font.png");
+        //this.fontRenderer = new FontRenderer(this, "/fonts/default/font.png");
+        this.fontRenderer = new NeoFontRenderer(this, "/fonts/Bullet.ttf");
+
 
 		// Load zh cn font
         try
