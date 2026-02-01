@@ -6,8 +6,10 @@ import tanks.Drawing;
 import tanks.Game;
 import tanks.Panel;
 import tanks.gui.Button;
+import tanks.gui.ChatBox;
 import tanks.gui.TextBox;
 import tanks.network.Client;
+import tanks.network.event.EventChat;
 import tanks.network.event.EventSendClientDetails;
 
 import java.util.UUID;
@@ -76,7 +78,9 @@ public class ScreenJoinParty extends Screen
 		@Override
 		public void run() 
 		{
-			Game.lastOfflineScreen = Game.screen;
+            ScreenPartyLobby.chatbox = new ChatBox(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.getInterfaceEdgeY(true) - 30, Drawing.drawing.interfaceSizeX - 20, 40, Game.game.input.chat, () -> Game.eventsOut.add(new EventChat(ScreenPartyLobby.chatbox.inputText)));
+
+            Game.lastOfflineScreen = Game.screen;
 
 			ScreenSharedLevels.page = 0;
 			ScreenPartyLobby.chat.clear();

@@ -665,10 +665,17 @@ public class Panel
 			{
 				for (int j = 0; j < ScreenPartyHost.server.connections.size(); j++)
 				{
-					if (ScreenPartyHost.server.connections.get(j).joined)
-						ScreenPartyHost.server.connections.get(j).addEvents(Game.eventsOut);
+                    ServerHandler sh = ScreenPartyHost.server.connections.get(j);
 
-					ScreenPartyHost.server.connections.get(j).reply();
+                    if (sh.joined)
+                        sh.addEvents(Game.eventsOut);
+                    else if (sh.pendingJoin != null)
+                        sh.addEvents(Game.eventsOut, true);
+
+                    if (sh.pendingJoin != null && !(Game.screen instanceof IPartyGameScreen))
+                        sh.pendingJoin.execute(sh);
+
+                    sh.reply();
 				}
 			}
 

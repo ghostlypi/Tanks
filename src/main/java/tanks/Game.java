@@ -423,6 +423,7 @@ public class Game
 		NetworkEventMap.register(EventArcadeFrenzy.class);
 		NetworkEventMap.register(EventArcadeEnd.class);
 		NetworkEventMap.register(EventArcadeBonuses.class);
+        NetworkEventMap.register(EventPendingJoinParty.class);
 
 		NetworkEventMap.register(EventSendOnlineClientDetails.class);
 		NetworkEventMap.register(EventSilentDisconnect.class);
