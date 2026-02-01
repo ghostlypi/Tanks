@@ -1789,7 +1789,7 @@ public class TankAIControlled extends Tank implements ITankField
 			}
 			else
 			{
-				if (!(m == null) && !Team.isAllied(m, this) && m instanceof Tank && !((Tank) m).hidden)
+				if (!(m == null) && !Team.isAllied(m, this) && m instanceof Tank && !((Tank) m).hidden && ((Tank) m).currentlyTargetable)
 				{
 					this.distance = Movable.distanceBetween(this, m);
 					this.shoot(false);

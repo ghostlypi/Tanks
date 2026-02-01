@@ -784,6 +784,24 @@ public class Level
 
     public static void broadcastBuilds(ArrayList<TankPlayer.ShopTankBuild> builds)
     {
+        for (Player p: Game.players)
+        {
+            p.ownedBuilds.add(builds.get(0).name);
+
+            boolean found = false;
+            for (TankPlayer.ShopTankBuild b: builds)
+            {
+                if (b.name.equals(p.buildName))
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                p.buildName = builds.get(0).name;
+        }
+
         for (ServerHandler h : ScreenPartyHost.server.connections)
         {
             if (h.player != null)
