@@ -33,7 +33,9 @@ public class ScreenJoinParty extends Screen
 			ip.posY += this.objYSpace;
 			join.posY += this.objYSpace;
 		}
-	}
+
+        Game.steamNetworkHandler.addPartyCountSubtext(steamLobbies);
+    }
 	
 	Button back = new Button(this.centerX, this.centerY + this.objYSpace * 3.5, this.objWidth, this.objHeight, "Back", new Runnable()
 	{
