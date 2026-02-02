@@ -520,7 +520,8 @@ public class ScreenChangelog extends Screen
                     {
                             "*What's new in Tanks v1.6.1:\n\n" +
                                     "Joining parties during a level no longer kicks you\n" +
-                                    "Fixed a crash in party crusades\n"
+                                    "Fixed a crash in party crusades\n" +
+                                    "Bug fixes and other minor improvements\n"
                     }
             );
         }
