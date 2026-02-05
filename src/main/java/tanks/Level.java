@@ -56,7 +56,7 @@ public class Level
 	public double light = 1.0;
 	public double shadow = 0.5;
 
-	public HashMap<String, Team> teamsMap = new HashMap<>();
+	public LinkedHashMap<String, Team> teamsMap = new LinkedHashMap<>();
 
 	public ArrayList<Integer> availablePlayerSpawns = new ArrayList<>();
 
@@ -79,7 +79,7 @@ public class Level
 
 	public ArrayList<TankAIControlled> customTanks;
 
-	public HashMap<String, Integer> itemNumbers = new HashMap<>();
+	public LinkedHashMap<String, Integer> itemNumbers = new LinkedHashMap<>();
 
 	public double startTime = 400;
 	public boolean disableFriendlyFire = false;
