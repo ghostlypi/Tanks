@@ -43,8 +43,7 @@ public class Level
 	public boolean remote = false;
 	public boolean preview = false;
 
-	public boolean timed = false;
-	public double timer;
+	public double timer = -1;
 
 	public int startX, startY;
 	public int sizeX, sizeY;
@@ -58,8 +57,6 @@ public class Level
 	public double shadow = 0.5;
 
 	public HashMap<String, Team> teamsMap = new HashMap<>();
-
-	public ArrayList<Team> teamsList = new ArrayList<>();
 
 	public ArrayList<Integer> availablePlayerSpawns = new ArrayList<>();
 
@@ -213,8 +210,6 @@ public class Level
 							tankTeams[i].friendlyFire = false;
 
 						teamsMap.put(t[0], tankTeams[i]);
-
-						teamsList.add(tankTeams[i]);
 					}
 				}
 				else
@@ -266,10 +261,7 @@ public class Level
 			int length = (int) Double.parseDouble(screen[8]) * 100;
 
 			if (length > 0)
-			{
-				this.timed = true;
-				this.timer = length;
-			}
+			    this.timer = length;
 		}
 
 		if (screen.length >= 11)
@@ -758,11 +750,9 @@ public class Level
 
 				teamsMap.put("ally", player);
 				teamsMap.put("enemy", enemy);
-				this.teamsList.add(player);
-				this.teamsList.add(enemy);
 			}
 
-			s.teams = this.teamsList;
+			s.teams = new ArrayList<>(teamsMap.values());
 			if (s.teams.size() > 0)
 			{
 				s.currentMetadata.put(SelectorTeam.player_selector_name, s.teams.get(0));
