@@ -191,6 +191,11 @@ public abstract class Screen implements IBatchRenderableObject
 
     }
 
+    public void onFilesDropped(String... files)
+    {
+
+    }
+
     public static class FlashingTile implements IBatchRenderableObject
 	{
 		public boolean redrawn = false;
