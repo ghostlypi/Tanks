@@ -16,7 +16,7 @@ fun getHash(): String {
 val lwjglVersion = "3.4.1"
 val lwjglNatives = listOf(
     "natives-freebsd",
-    "natives-linux-arm32", "natives-linux-arm64", 
+    "natives-linux-arm32", "natives-linux-arm64",
 	"natives-linux-ppc64le", "natives-linux-riscv64",
 	"natives-linux",
     "natives-macos", "natives-macos-arm64",
