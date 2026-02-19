@@ -217,10 +217,12 @@ def main() -> int:
 
     for java_file in sorted(src_root.rglob('*.java')):
         files_checked += 1
-        original = java_file.read_text(encoding='utf-8', newline='')
+        with open(java_file, encoding='utf-8', newline='') as fh:
+            original = fh.read()
         fixed = apply_fixes(original, indent)
         if fixed != original:
-            java_file.write_text(fixed, encoding='utf-8', newline='')
+            with open(java_file, 'w', encoding='utf-8', newline='') as fh:
+                fh.write(fixed)
             files_changed += 1
             print(f'  fixed: {java_file.relative_to(project_root)}')
 
