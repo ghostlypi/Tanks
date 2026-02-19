@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+          "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+          "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+  <!-- Add suppressions here. Examples: -->
+  <!-- <suppress checks="LineLength" files=".*\.java" /> -->
+  <!-- <suppress checks="MagicNumber" files="Constants\.java" /> -->
+  <suppress checks=".*" files="ScreenChangelog\.java" />
+  <!-- Trailing semicolons after enum/class declarations (e.g. '};') do not need a preceding empty line -->
+  <suppress checks="EmptyLineSeparator" message="&apos;;&apos; should be separated from previous line\." />
+</suppressions>
