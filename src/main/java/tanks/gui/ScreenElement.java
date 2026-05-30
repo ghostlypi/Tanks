@@ -1,5 +1,6 @@
 package tanks.gui;
 
+import basewindow.InputCodes;
 import tanks.*;
 
 import java.util.ArrayList;
@@ -16,9 +17,23 @@ public abstract class ScreenElement
         public double removeDuration = 100;
         public double width = 250;
 
+        public NotificationAction action;
+        public boolean isHovered = false;
+        public boolean progressActive = false;
+        public boolean addedToHistory = false;
+
+        public String rawText;
+        private boolean textChanged = false;
+
         public Notification(String text)
         {
             this(text, 1000, 250);
+        }
+
+        public Notification(String text, NotificationAction action)
+        {
+            this(text, 1000, 250);
+            this.action = action;
         }
 
         public Notification(String text, double duration)
@@ -26,18 +41,56 @@ public abstract class ScreenElement
             this(text, duration, 250);
         }
 
+        public Notification(String text, double duration, NotificationAction action)
+        {
+            this(text, duration, 250);
+            this.action = action;
+        }
+
         public Notification(String text, double duration, double width)
         {
             Drawing.drawing.playSound("toast.ogg", 1, Game.soundVolume);
+            this.rawText = text;
             this.text = Drawing.drawing.wrapText(text, width, 16);
             this.width = width;
             this.duration = duration;
             this.sizeY = Math.max(2, this.text.size() + 1) * 20;
         }
 
+        public Notification(String text, double duration, double width, NotificationAction action)
+        {
+            this(text, duration, width);
+            this.action = action;
+        }
+
+        public synchronized void setText(String text)
+        {
+            this.rawText = text;
+            this.textChanged = true;
+        }
+
         public double draw(double prevSY)
         {
-            this.age += Panel.frameFrequency;
+            synchronized (this)
+            {
+                if (this.textChanged)
+                {
+                    this.text = Drawing.drawing.wrapText(this.rawText, this.width, 16);
+                    this.sizeY = Math.max(2, this.text.size() + 1) * 20;
+                    this.textChanged = false;
+                }
+            }
+
+            if (!this.progressActive && !this.addedToHistory)
+            {
+                Panel.notificationHistory.add(this);
+                this.addedToHistory = true;
+            }
+
+            if (!this.progressActive)
+            {
+                this.age += Panel.frameFrequency;
+            }
 
             double mult = Math.sin(Math.min(1, this.age / 50.0) * Math.PI / 2);
             double addX = (1 - mult) * 400;
@@ -45,11 +98,76 @@ public abstract class ScreenElement
             double x = Drawing.drawing.interfaceSizeX - 70 - this.width;
             double y = Drawing.drawing.interfaceSizeY - Drawing.drawing.statsHeight - sizeY - 80 - prevSY;
 
+            double closeCenterX = x + this.width + 45 + addX;
+            double closeCenterY = y + 20;
+            double closeRadius = 10;
+
+            boolean isHoveringClose = false;
+            if (this.age < this.duration)
+            {
+                double mx = Drawing.drawing.getInterfaceMouseX();
+                double my = Drawing.drawing.getInterfaceMouseY();
+                isHoveringClose = (mx >= closeCenterX - closeRadius &&
+                    mx <= closeCenterX + closeRadius &&
+                    my >= closeCenterY - closeRadius &&
+                    my <= closeCenterY + closeRadius);
+
+                double px = x + addX;
+                double py = y;
+                double pw = this.width + 66;
+                double ph = sizeY + 10;
+
+                this.isHovered = (mx >= px && mx <= px + pw && my >= py && my <= py + ph);
+
+                if (this.isHovered || isHoveringClose)
+                {
+                    if (Game.game.window.validPressedButtons.contains(InputCodes.MOUSE_BUTTON_1))
+                    {
+                        Game.game.window.validPressedButtons.remove((Integer) InputCodes.MOUSE_BUTTON_1);
+                        Drawing.drawing.playSound("click.ogg", 1, Game.soundVolume);
+
+                        if (isHoveringClose)
+                        {
+                            this.age = this.duration + this.removeDuration + 0.0001;
+                            this.progressActive = false;
+                            Panel.notificationHistory.remove(this);
+                        }
+                        else
+                        {
+                            if (this.action != null)
+                            {
+                                this.action.onClick(this);
+                            }
+                            this.age = this.duration + this.removeDuration + 0.0001;
+                            this.progressActive = false;
+                            Panel.notificationHistory.remove(this);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                this.isHovered = false;
+            }
+
             double bg = Level.isDark() ? 0 : 255;
             double fg = Level.isDark() ? 255 : 0;
+            double bgAlpha = colA / 2;
 
-            Drawing.drawing.setColor(bg, bg, bg, colA / 2);
+            if (this.isHovered)
+            {
+                bgAlpha = colA * 0.75;
+            }
+
+            Drawing.drawing.setColor(bg, bg, bg, bgAlpha);
             Drawing.drawing.drawConcentricPopup(x + this.width / 2 + 33 + addX, y + sizeY / 2, this.width + 65, sizeY + 10, 5, 27);
+
+            if (this.isHovered)
+            {
+                Drawing.drawing.setColor(0, 150, 255, colA);
+                Drawing.drawing.drawInterfaceRect(x + this.width / 2 + 33 + addX, y + sizeY / 2, this.width + 65, sizeY + 10, 3, 27);
+            }
+
             Drawing.drawing.setInterfaceFontSize(16);
 
             Drawing.drawing.setColor(fg, fg, fg, colA);
@@ -61,6 +179,21 @@ public abstract class ScreenElement
                 Drawing.drawing.setColor(fg, fg, fg, colA);
                 Drawing.drawing.drawUncenteredInterfaceText(x + 50 + addX, y + i * 20 + 12, String.format("\u00A7%03d%03d%03d255", (int) (r * 255), (int) (g * 255), (int) (b * 255)) + this.text.get(i));
             }
+
+            // Draw close ('x') button
+            if (isHoveringClose)
+            {
+                Drawing.drawing.setColor(255, 0, 0, colA);
+            }
+            else
+            {
+                Drawing.drawing.setColor(fg, fg, fg, colA * 0.3);
+            }
+            Drawing.drawing.fillInterfaceOval(closeCenterX, closeCenterY, closeRadius * 2, closeRadius * 2);
+
+            Drawing.drawing.setColor(255, 255, 255, colA);
+            Drawing.drawing.setInterfaceFontSize(12);
+            Drawing.drawing.drawInterfaceText(closeCenterX, closeCenterY, "x");
 
             Drawing.drawing.setColor(0, 150, 255, colA);
             Drawing.drawing.fillInterfaceOval(x + 27 + addX, y + 20, 25, 25);

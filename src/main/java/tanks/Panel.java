@@ -23,6 +23,9 @@ public class Panel
 {
     public static boolean onlinePaused;
     public static ArrayList<Notification> notifications = new ArrayList<>();
+    public static ArrayList<Notification> notificationHistory = new ArrayList<>();
+    public static double historyScroll = 0;
+    public static boolean showNotifCard = false;
     public static CenterMessage currentMessage;
     public static String lastWindowTitle = "";
 
@@ -631,6 +634,60 @@ public class Panel
 
         ScreenOverlayChat.update(!(Game.screen instanceof IHiddenChatboxScreen));
 
+        boolean showNotifButton = !(Game.screen instanceof ScreenExit ||
+            Game.screen instanceof ScreenIntro ||
+            Game.screen instanceof ScreenCrusadeStats ||
+            Game.screen instanceof ScreenArcadeBonuses ||
+            (Game.screen instanceof ScreenGame &&
+            !((ScreenGame) Game.screen).paused));
+        if (showNotifButton)
+        {
+            double mx = Drawing.drawing.getInterfaceMouseX();
+            double my = Drawing.drawing.getInterfaceMouseY();
+            double bellX = Drawing.drawing.interfaceSizeX - 40;
+            double bellY = Drawing.drawing.interfaceSizeY - Drawing.drawing.statsHeight - 30;
+            boolean isHoveringBell = (mx >= bellX - 20 &&
+                mx <= bellX + 20 &&
+                my >= bellY - 20 &&
+                my <= bellY + 20);
+            boolean isHoveringCard = (mx >= Drawing.drawing.interfaceSizeX - 360 &&
+                mx <= Drawing.drawing.interfaceSizeX - 20 &&
+                my >= bellY - 430 &&
+                my <= bellY - 30);
+
+            if (Game.game.window.validPressedButtons.contains(InputCodes.MOUSE_BUTTON_1))
+            {
+                if (isHoveringBell)
+                {
+                    Game.game.window.validPressedButtons.remove((Integer) InputCodes.MOUSE_BUTTON_1);
+                    Drawing.drawing.playSound("click.ogg", 1, Game.soundVolume);
+                    showNotifCard = !showNotifCard;
+                }
+                else if (!isHoveringCard)
+                {
+                    showNotifCard = false;
+                }
+            }
+
+            if (showNotifCard && isHoveringCard)
+            {
+                if (Game.game.window.validScrollUp)
+                {
+                    Game.game.window.validScrollUp = false;
+                    historyScroll = Math.max(0, historyScroll - 40);
+                }
+                else if (Game.game.window.validScrollDown)
+                {
+                    Game.game.window.validScrollDown = false;
+                    historyScroll += 40;
+                }
+            }
+        }
+        else
+        {
+            showNotifCard = false;
+        }
+
         if (Game.screen.interfaceScaleZoomOverride > 0)
             Drawing.drawing.interfaceScaleZoom = Game.screen.interfaceScaleZoomOverride;
         else
@@ -917,7 +974,7 @@ public class Panel
             for (int i = 0; i < notifications.size(); i++)
             {
                 Notification n = notifications.get(i);
-                if (i > 0)
+                if (i > 0 && n.age < n.duration)
                     n.age = Math.max(0, Math.min(n.age, notifications.get(i - 1).age - 25));
                 sy += n.draw(sy);
 
@@ -931,6 +988,202 @@ public class Panel
 
         if (currentMessage != null)
             currentMessage.draw();
+
+        boolean showNotifButton = !(Game.screen instanceof ScreenExit ||
+            Game.screen instanceof ScreenIntro ||
+            Game.screen instanceof ScreenCrusadeStats ||
+            Game.screen instanceof ScreenArcadeBonuses ||
+            (Game.screen instanceof ScreenGame &&
+            !((ScreenGame) Game.screen).paused));
+        if (showNotifButton)
+        {
+            double bellX = Drawing.drawing.interfaceSizeX - 40;
+            double bellY = Drawing.drawing.interfaceSizeY - Drawing.drawing.statsHeight - 30;
+            double bellSize = 25;
+
+            double mx = Drawing.drawing.getInterfaceMouseX();
+            double my = Drawing.drawing.getInterfaceMouseY();
+            boolean isHoveringBell = (mx >= bellX - 20 &&
+                mx <= bellX + 20 &&
+                my >= bellY - 20 &&
+                my <= bellY + 20);
+            boolean isHoveringCard = (mx >= Drawing.drawing.interfaceSizeX - 360 &&
+                mx <= Drawing.drawing.interfaceSizeX - 20 &&
+                my >= bellY - 430 &&
+                my <= bellY - 30);
+
+            boolean showCard = showNotifCard;
+
+            if (Game.glowEnabled)
+            {
+                if (isHoveringBell && !Game.game.window.touchscreen)
+                {
+                    Button.drawGlow(bellX, bellY + 5, 40, 40, 0.65, 0, 0, 0, 80, false);
+                }
+                else
+                {
+                    Button.drawGlow(bellX, bellY + 5, 40, 40, 0.6, 0, 0, 0, 100, false);
+                }
+            }
+
+            if (isHoveringBell)
+            {
+                Drawing.drawing.setColor(240, 240, 255, 255);
+            }
+            else
+            {
+                Drawing.drawing.setColor(255, 255, 255, 255);
+            }
+            Drawing.drawing.fillInterfaceOval(bellX, bellY, 40, 40);
+
+            Drawing.drawing.setColor(255, 255, 255, 255);
+            Drawing.drawing.drawInterfaceImage("icons/bell.png", bellX, bellY, bellSize, bellSize);
+
+            int pendingCount = notificationHistory.size();
+            if (pendingCount > 0)
+            {
+                double badgeX = bellX + 15;
+                double badgeY = bellY - 15;
+                double badgeSize = 16;
+
+                Drawing.drawing.setColor(255, 0, 0, 255);
+                Drawing.drawing.fillInterfaceOval(badgeX, badgeY, badgeSize, badgeSize);
+
+                Drawing.drawing.setColor(255, 255, 255, 255);
+                Drawing.drawing.setInterfaceFontSize(10);
+                Drawing.drawing.drawInterfaceText(badgeX, badgeY, String.valueOf(pendingCount));
+            }
+
+            if (showCard)
+            {
+                double cardWidth = 340;
+                double cardHeight = 400;
+                double centerX = Drawing.drawing.interfaceSizeX - 190;
+                double topY = bellY - 430;
+                double bottomY = topY + cardHeight;
+
+                double bg = Level.isDark() ? 0 : 255;
+                double fg = Level.isDark() ? 255 : 0;
+
+                Drawing.drawing.setColor(bg, bg, bg, 220);
+                Drawing.drawing.fillInterfaceRoundedRect(centerX, topY + cardHeight / 2, cardWidth, cardHeight, 15);
+
+                Drawing.drawing.setColor(0, 150, 255, 120);
+                Drawing.drawing.drawInterfaceRect(centerX, topY + cardHeight / 2, cardWidth, cardHeight, 2, 15);
+
+                Drawing.drawing.setInterfaceFontSize(18);
+                Drawing.drawing.setColor(fg, fg, fg, 255);
+                Drawing.drawing.drawInterfaceText(centerX, topY + 25, "Notification History");
+
+                Drawing.drawing.setColor(fg, fg, fg, 50);
+                Drawing.drawing.fillInterfaceRect(centerX, topY + 45, 300, 2);
+
+                double contentStartY = topY + 60;
+                double contentHeight = cardHeight - 80;
+
+                double totalContentHeight = 0;
+                for (int k = 0; k < notificationHistory.size(); k++)
+                {
+                    totalContentHeight += notificationHistory.get(k).sizeY + 15;
+                }
+
+                historyScroll = Math.min(historyScroll, Math.max(0, totalContentHeight - contentHeight));
+
+                double currY = contentStartY - historyScroll;
+
+                for (int k = notificationHistory.size() - 1; k >= 0; k--)
+                {
+                    Notification n = notificationHistory.get(k);
+                    double boxCenterY = currY + n.sizeY / 2;
+
+                    if (boxCenterY + n.sizeY / 2 >= contentStartY && boxCenterY - n.sizeY / 2 <= bottomY - 15)
+                    {
+                        double closeX = centerX + 135;
+                        double closeY = boxCenterY - n.sizeY / 2 + 15;
+                        boolean isHoveringHistoryClose = (mx >= closeX - 8 &&
+                            mx <= closeX + 8 &&
+                            my >= closeY - 8 &&
+                            my <= closeY + 8 &&
+                            my >= contentStartY &&
+                            my <= bottomY - 15);
+
+                        if (isHoveringHistoryClose)
+                        {
+                            if (Game.game.window.validPressedButtons.contains(InputCodes.MOUSE_BUTTON_1))
+                            {
+                                Game.game.window.validPressedButtons.remove((Integer) InputCodes.MOUSE_BUTTON_1);
+                                Drawing.drawing.playSound("click.ogg", 1, Game.soundVolume);
+                                notificationHistory.remove(k);
+                                continue;
+                            }
+                        }
+
+                        boolean isHoveredInHistory = (n.action != null && !isHoveringHistoryClose && mx >= centerX - 150 && mx <= centerX + 150 &&
+                            my >= boxCenterY - n.sizeY / 2 && my <= boxCenterY + n.sizeY / 2 && my >= contentStartY && my <= bottomY - 15);
+
+                        if (isHoveredInHistory)
+                        {
+                            if (Game.game.window.validPressedButtons.contains(InputCodes.MOUSE_BUTTON_1))
+                            {
+                                Game.game.window.validPressedButtons.remove((Integer) InputCodes.MOUSE_BUTTON_1);
+                                Drawing.drawing.playSound("click.ogg", 1, Game.soundVolume);
+                                n.action.onClick(n);
+                            }
+                        }
+
+                        double itemBg = Level.isDark() ? 30 : 240;
+                        double itemBgAlpha = isHoveredInHistory ? 230 : 150;
+
+                        Drawing.drawing.setColor(itemBg, itemBg, itemBg, itemBgAlpha);
+                        Drawing.drawing.fillInterfaceRoundedRect(centerX, boxCenterY, 300, n.sizeY, 10);
+
+                        if (n.action != null)
+                        {
+                            Drawing.drawing.setColor(0, 150, 255, isHoveredInHistory ? 200 : 100);
+                            Drawing.drawing.drawInterfaceRect(centerX, boxCenterY, 300, n.sizeY, 2, 10);
+                        }
+                        else
+                        {
+                            Drawing.drawing.setColor(fg, fg, fg, 40);
+                            Drawing.drawing.drawInterfaceRect(centerX, boxCenterY, 300, n.sizeY, 1, 10);
+                        }
+
+                        Drawing.drawing.setInterfaceFontSize(14);
+                        for (int j = 0; j < n.text.size(); j++)
+                        {
+                            Drawing.drawing.setColor(fg, fg, fg, 255);
+                            Drawing.drawing.drawInterfaceText(centerX + (n.action != null ? 10 : 0), boxCenterY - n.sizeY / 2 + j * 20 + 15, n.text.get(j));
+                        }
+
+                        if (n.action != null)
+                        {
+                            Drawing.drawing.setColor(0, 150, 255, 255);
+                            Drawing.drawing.fillInterfaceOval(centerX - 130, boxCenterY, 15, 15);
+                            Drawing.drawing.setColor(255, 255, 255, 255);
+                            Drawing.drawing.setInterfaceFontSize(12);
+                            Drawing.drawing.drawInterfaceText(centerX - 130, boxCenterY, "!");
+                        }
+
+                        // Draw history item close ('x') button
+                        if (isHoveringHistoryClose)
+                        {
+                            Drawing.drawing.setColor(255, 0, 0, 255);
+                        }
+                        else
+                        {
+                            Drawing.drawing.setColor(fg, fg, fg, 50);
+                        }
+                        Drawing.drawing.fillInterfaceOval(closeX, closeY, 16, 16);
+
+                        Drawing.drawing.setColor(255, 255, 255, 255);
+                        Drawing.drawing.setInterfaceFontSize(10);
+                        Drawing.drawing.drawInterfaceText(closeX, closeY, "x");
+                    }
+
+                    currY += n.sizeY + 15;
+                }
+            }
+        }
 
         if (Drawing.drawing.tooltip != null)
             Drawing.drawing.drawTooltip(Drawing.drawing.tooltip, Drawing.drawing.getInterfaceMouseX(), Drawing.drawing.getInterfaceMouseY());
