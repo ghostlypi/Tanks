@@ -1,6 +1,7 @@
 package lwjglwindow;
 
 import basewindow.*;
+import basewindow.PlatformType;
 import basewindow.transformation.Matrix4;
 import basewindow.transformation.Transformation;
 import tanks.Game;
@@ -50,6 +51,8 @@ public class LWJGLWindow extends BaseWindow
     protected HashMap<String, Integer> textures = new HashMap<>();
     protected HashMap<String, Integer> textureSX = new HashMap<>();
     protected HashMap<String, Integer> textureSY = new HashMap<>();
+
+    public PlatformType platform = PlatformType.LWJGL;
 
     public boolean batchMode = false;
     public boolean batchQuads = false;

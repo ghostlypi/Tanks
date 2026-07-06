@@ -14,6 +14,8 @@ public abstract class BaseWindow
     public boolean runningFromSource;
     protected ArrayList<String> overrideLocations = new ArrayList<>();
 
+    public PlatformType platform;
+
     public BaseShapeRenderer shapeRenderer;
     public BaseFontRenderer fontRenderer;
 
