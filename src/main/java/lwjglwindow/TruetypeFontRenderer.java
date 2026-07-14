@@ -31,8 +31,13 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         public final boolean pixelPerfect;
         public final double sizeScale;
         public final double yOffset;
-        public final java.awt.Font awtFont;
-        public final double awtToStbScaleRatio;
+
+        // The AWT Font is loaded lazily (see getAwtFont) rather than in the constructor: creating one
+        // spills the font data to a temp file on disk, so eagerly building one for every registered
+        // fallback exhausts the disk quota. These two fields are only valid once awtFontLoaded is true.
+        private volatile boolean awtFontLoaded = false;
+        private java.awt.Font awtFont = null;
+        private double awtToStbScaleRatio = 1.0;
 
         private final Map<Integer, Integer> glyphTextures = new HashMap<>();
         private final Map<Integer, int[]> glyphMetrics = new HashMap<>();
@@ -69,15 +74,49 @@ public class TruetypeFontRenderer extends BaseFontRenderer
                 stbtt_GetFontVMetrics(stbInfo, a, d, lg);
                 this.ascent = a.get(0);
             }
+        }
+
+        /**
+         * Returns this font's AWT {@link java.awt.Font}, used for complex-script shaping, loading it
+         * on first call. The load is deferred because {@link java.awt.Font#createFont} writes the font
+         * data out to a temp file on disk; with many system fonts registered as fallbacks, doing it up
+         * front for all of them exhausts the disk quota ("failed to load AWT Font: Disk quota
+         * exceeded"). We only render a handful of scripts, so each font pays this cost only if it is
+         * actually used to draw or measure text.
+         *
+         * @return the derived AWT Font, or null if it could not be created (callers then fall back to
+         *         per-glyph STB rendering)
+         */
+        public synchronized java.awt.Font getAwtFont()
+        {
+            if (!awtFontLoaded)
+                loadAwtFont();
+            return awtFont;
+        }
+
+        /** The AWT-to-STB advance ratio, ensuring the AWT font (and hence the ratio) is loaded first. */
+        public double getAwtToStbScaleRatio()
+        {
+            getAwtFont();
+            return awtToStbScaleRatio;
+        }
+
+        private void loadAwtFont()
+        {
+            awtFontLoaded = true;
 
             java.awt.Font rawFont = null;
             try
             {
-                byte[] bytes = new byte[buffer.remaining()];
-                int originalPos = buffer.position();
-                buffer.get(bytes);
-                buffer.position(originalPos);
-                
+                byte[] bytes;
+                synchronized (ttfBuffer)
+                {
+                    bytes = new byte[ttfBuffer.remaining()];
+                    int originalPos = ttfBuffer.position();
+                    ttfBuffer.get(bytes);
+                    ttfBuffer.position(originalPos);
+                }
+
                 rawFont = java.awt.Font.createFont(java.awt.Font.TRUETYPE_FONT, new java.io.ByteArrayInputStream(bytes));
             }
             catch (Exception e)
@@ -85,6 +124,15 @@ public class TruetypeFontRenderer extends BaseFontRenderer
                 System.err.println("TruetypeFontRenderer: failed to load AWT Font: " + e.getMessage());
             }
             this.awtFont = (rawFont != null) ? rawFont.deriveFont((float) bakeHeight) : null;
+
+            // A .ttc collection packs many sub-fonts into the one buffer we pass to createFont, but
+            // Java 8 has no way to pick a sub-font — it always returns the collection's first font.
+            // So a non-first sub-font (e.g. the Devanagari face inside NotoSans.ttc) ends up with the
+            // AWT font of the first (Latin) face, and shaping through it yields .notdef boxes. Detect
+            // that mismatch by checking the AWT font can display the scripts STB says this face covers;
+            // if not, drop it so callers fall back to STB per-glyph rendering with the correct face.
+            if (this.awtFont != null && !awtFontMatchesStbCoverage())
+                this.awtFont = null;
 
             double ratio = 1.0;
             if (this.awtFont != null)
@@ -101,7 +149,7 @@ public class TruetypeFontRenderer extends BaseFontRenderer
                         }
                     }
                 }
-                
+
                 try
                 {
                     java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, true, true);
@@ -120,6 +168,43 @@ public class TruetypeFontRenderer extends BaseFontRenderer
                 }
             }
             this.awtToStbScaleRatio = ratio;
+        }
+
+        // One distinctive codepoint per major writing system, used to check an AWT font is the same
+        // face STB loaded (see loadAwtFont). For the same font file STB coverage and AWT canDisplay
+        // agree; they only diverge when createFont handed back a different .ttc sub-font.
+        private static final int[] SCRIPT_PROBES =
+            {
+                0x0041, // Latin
+                0x0410, // Cyrillic
+                0x0391, // Greek
+                0x4E00, // CJK
+                0x3042, // Hiragana
+                0xAC00, // Hangul
+                0x0905, // Devanagari
+                0x0985, // Bengali
+                0x0B85, // Tamil
+                0x0627, // Arabic
+                0x05D0, // Hebrew
+                0x0E01, // Thai
+                0x10D0, // Georgian
+                0x0531, // Armenian
+                0x1200  // Ethiopic
+            };
+
+        /**
+         * True if the loaded AWT font can display every probe script that STB reports this face
+         * covers. A false result means createFont returned the wrong face (a first-sub-font stand-in
+         * for a .ttc member Java 8 can't address), so the AWT font must not be used for this face.
+         */
+        private boolean awtFontMatchesStbCoverage()
+        {
+            for (int cp: SCRIPT_PROBES)
+            {
+                if (supportsCodepoint(cp) && !awtFont.canDisplay(cp))
+                    return false;
+            }
+            return true;
         }
 
         public boolean supportsCodepoint(int codepoint)
@@ -240,6 +325,10 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         this.lwjglWindow = h;
         this.defaultFont = loadFont(ttfResourcePath, bakeHeight, pixelPerfect, sizeScale, yOffset);
         this.fonts.add(defaultFont);
+
+        // Every other font loads its AWT font lazily to avoid exhausting the disk quota, but the
+        // default (Bullet) font is always in use, so load it up front so it's ready immediately.
+        this.defaultFont.getAwtFont();
     }
 
     private ByteBuffer readResource(String path) throws IOException
@@ -906,7 +995,8 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         if (text.isEmpty())
             return 0;
 
-        if (font.awtFont == null)
+        java.awt.Font awtFont = font.getAwtFont();
+        if (awtFont == null)
         {
             double w = 0;
             for (int i = 0; i < text.length(); i++)
@@ -918,9 +1008,9 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         }
 
         java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, true, true);
-        java.awt.font.GlyphVector gv = font.awtFont.layoutGlyphVector(frc, text.toCharArray(), 0, text.length(), java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
+        java.awt.font.GlyphVector gv = awtFont.layoutGlyphVector(frc, text.toCharArray(), 0, text.length(), java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
         double scaleX = sX * 32.0 * font.sizeScale / font.bakeHeight;
-        return gv.getGlyphPosition(gv.getNumGlyphs()).getX() * font.awtToStbScaleRatio * scaleX;
+        return gv.getGlyphPosition(gv.getNumGlyphs()).getX() * font.getAwtToStbScaleRatio() * scaleX;
     }
 
     @Override
@@ -1062,7 +1152,8 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         if (text.isEmpty())
             return 0;
 
-        if (font.awtFont == null)
+        java.awt.Font awtFont = font.getAwtFont();
+        if (awtFont == null)
         {
             double curX = x;
             for (int i = 0; i < text.length(); i++)
@@ -1073,16 +1164,17 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         }
 
         java.awt.font.FontRenderContext frc = new java.awt.font.FontRenderContext(null, true, true);
-        java.awt.font.GlyphVector gv = font.awtFont.layoutGlyphVector(frc, text.toCharArray(), 0, text.length(), java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
+        java.awt.font.GlyphVector gv = awtFont.layoutGlyphVector(frc, text.toCharArray(), 0, text.length(), java.awt.Font.LAYOUT_LEFT_TO_RIGHT);
 
         int numGlyphs = gv.getNumGlyphs();
         double scaleX = sX * 32.0 * font.sizeScale / font.bakeHeight;
         double scaleY = sY * 32.0 * font.sizeScale / font.bakeHeight;
         double baselineY = (y - sY * 16) + font.ascent * font.fontScale * scaleY + sY * 32 * font.yOffset;
+        double awtToStbScaleRatio = font.getAwtToStbScaleRatio();
 
         if (lwjglWindow.mainRenderPasses.drawingShadow)
         {
-            return gv.getGlyphPosition(numGlyphs).getX() * font.awtToStbScaleRatio * scaleX;
+            return gv.getGlyphPosition(numGlyphs).getX() * awtToStbScaleRatio * scaleX;
         }
 
         for (int i = 0; i < numGlyphs; i++)
@@ -1100,8 +1192,8 @@ public class TruetypeFontRenderer extends BaseFontRenderer
             int xoff = m[3];
             int yoff = m[4];
 
-            double gx = x + (pos.getX() * font.awtToStbScaleRatio + xoff) * scaleX;
-            double gy = baselineY + (pos.getY() * font.awtToStbScaleRatio + yoff) * scaleY;
+            double gx = x + (pos.getX() * awtToStbScaleRatio + xoff) * scaleX;
+            double gy = baselineY + (pos.getY() * awtToStbScaleRatio + yoff) * scaleY;
             double gw = bitmapW * scaleX;
             double gh = bitmapH * scaleY;
 
@@ -1136,6 +1228,6 @@ public class TruetypeFontRenderer extends BaseFontRenderer
             }
         }
 
-        return gv.getGlyphPosition(numGlyphs).getX() * font.awtToStbScaleRatio * scaleX;
+        return gv.getGlyphPosition(numGlyphs).getX() * awtToStbScaleRatio * scaleX;
     }
 }
