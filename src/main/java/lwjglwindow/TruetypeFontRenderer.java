@@ -38,6 +38,12 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         public final double sizeScale;
         public final double yOffset;
 
+        // True if this is the first (or only) font in its buffer. Java 8's Font.createFont, given the
+        // whole buffer, can only return the buffer's first font, so only a first-in-buffer face gets a
+        // correct AWT font and can be used for complex-script shaping; a later .ttc sub-font is limited
+        // to STB per-glyph rendering. The font resolver uses this to prefer a shaping-capable face.
+        public final boolean firstInBuffer;
+
         // The AWT Font is loaded lazily (see getAwtFont) rather than in the constructor: creating one
         // spills the font data to a temp file on disk, so eagerly building one for every registered
         // fallback exhausts the disk quota. These two fields are only valid once awtFontLoaded is true.
@@ -78,6 +84,8 @@ public class TruetypeFontRenderer extends BaseFontRenderer
 
             if (!stbtt_InitFont(stbInfo, buffer, fontOffset))
                 throw new RuntimeException("Failed to initialize STB truetype font");
+
+            this.firstInBuffer = (fontOffset == stbtt_GetFontOffsetForIndex(buffer, 0));
 
             this.fontScale = stbtt_ScaleForPixelHeight(stbInfo, bakeHeight);
 
@@ -807,8 +815,8 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         for (int s = 0; s < langs.length; s++)
         {
             int codepoint = samples[s];
-            if (anyFontSupports(codepoint))
-                continue;   // already covered by Bullet or a font loaded for an earlier script
+            if (anyShapingCapableFontSupports(codepoint))
+                continue;   // already covered by a shaping-capable font (Bullet or an earlier script's)
 
             List<String> candidates;
             try
@@ -853,11 +861,16 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         }
     }
 
-    /** True if any already-loaded font has a glyph for {@code codepoint}. */
-    private boolean anyFontSupports(int codepoint)
+    /**
+     * True if an already-loaded <em>shaping-capable</em> font (first-in-buffer, so it can get a
+     * correct AWT font) has a glyph for {@code codepoint}. A shaping-incapable .ttc sub-font that
+     * merely claims the script does not count, so the resolver still loads a proper standalone font
+     * for it rather than being blocked into STB-only per-glyph rendering.
+     */
+    private boolean anyShapingCapableFontSupports(int codepoint)
     {
         for (TtfFontInfo font: fonts)
-            if (font.supportsCodepoint(codepoint))
+            if (font.firstInBuffer && font.supportsCodepoint(codepoint))
                 return true;
         return false;
     }
@@ -1009,14 +1022,29 @@ public class TruetypeFontRenderer extends BaseFontRenderer
         return false;
     }
 
+    /**
+     * Picks the font used to render {@code cp}. A shaping-capable face (first-in-buffer, so it gets a
+     * correct AWT font — see {@link TtfFontInfo#firstInBuffer}) is preferred over one that can only be
+     * STB per-glyph rendered, even if the STB-only face appears earlier. This lets a proper standalone
+     * system font (e.g. Droid Sans Devanagari) win over a shaping-incapable .ttc sub-font that also
+     * claims the script (e.g. a face inside a downloaded NotoSans.ttc). Among faces of equal capability
+     * the earliest wins, preserving user/priority ordering. Falls back to any covering face, else the
+     * default font.
+     */
     private TtfFontInfo findFontForCodepoint(int cp)
     {
+        TtfFontInfo stbOnly = null;
         for (TtfFontInfo font: fonts)
         {
             if (font.supportsCodepoint(cp))
-                return font;
+            {
+                if (font.firstInBuffer)
+                    return font;
+                if (stbOnly == null)
+                    stbOnly = font;
+            }
         }
-        return defaultFont;
+        return stbOnly != null ? stbOnly : defaultFont;
     }
 
     private TtfFontInfo findFontForChar(char c)
