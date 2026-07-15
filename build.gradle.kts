@@ -188,3 +188,13 @@ task("BuildMacApp", Exec::class) {
         "--dest", distributions,
     )
 }
+
+task("generateTranslations", type = JavaExec::class) {
+    description = "Generates translation keys using TranslationKeyExtractor"
+    group = "translation"
+    dependsOn(tasks.compileJava)
+    classpath(sourceSets.main.get().runtimeClasspath)
+    mainClass.set("tanks.translation.TranslationKeyExtractor")
+    workingDir = project.projectDir
+    args("--format=locations") // By default output locations, can be overridden via command line
+}

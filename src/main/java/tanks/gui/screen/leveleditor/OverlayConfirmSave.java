@@ -63,7 +63,7 @@ public class OverlayConfirmSave extends ScreenLevelEditorOverlay
 
         Drawing.drawing.setColor(this.editor.fontBrightness, this.editor.fontBrightness, this.editor.fontBrightness);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3, "Save before exiting?");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3, "Save before exiting?");
 
         saveExit.draw();
         noSaveExit.draw();

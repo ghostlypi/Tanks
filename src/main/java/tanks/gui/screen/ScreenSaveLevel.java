@@ -334,7 +334,7 @@ public class ScreenSaveLevel extends Screen implements ILevelPreviewScreen
 
                 Drawing.drawing.setColor(255, 255, 255);
                 Drawing.drawing.setInterfaceFontSize(this.textSize);
-                Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX - 700, votePosY, "Vote:");
+                Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX - 700, votePosY, "Vote:");
 
                 Drawing.drawing.setColor(0, 200, 0);
                 Drawing.drawing.drawInterfaceText(voteUp.posX + 30, votePosY, votesUp + "", false);

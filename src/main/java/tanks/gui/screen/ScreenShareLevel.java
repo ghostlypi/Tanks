@@ -120,7 +120,7 @@ public class ScreenShareLevel extends Screen
             Drawing.drawing.setColor(0, 0, 0);
             Drawing.drawing.setInterfaceFontSize(24);
 
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY, "No levels found");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY, "No levels found");
         }
 
         Drawing.drawing.setInterfaceFontSize(this.titleSize);

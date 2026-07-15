@@ -162,15 +162,15 @@ public class ScreenWorkshopLevelDownloadFailed extends Screen
 
             Drawing.drawing.setColor(0, 0, 0);
             Drawing.drawing.setInterfaceFontSize(this.titleSize);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace, "Failed to download the level!");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace, "Failed to download the level!");
 
             Drawing.drawing.setInterfaceFontSize(this.textSize);
             Drawing.drawing.drawInterfaceText(this.centerX, this.centerY, SteamResults.getMessage(result));
 
             if (result.equals(SteamResult.FileNotFound))
-                Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + this.objYSpace * 0.5, "The level may not have been properly uploaded.");
+                Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + this.objYSpace * 0.5, "The level may not have been properly uploaded.");
             else
-                Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + this.objYSpace * 0.5, "Please try again.");
+                Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + this.objYSpace * 0.5, "Please try again.");
 
             if (showDelete)
                 this.delete.draw();
@@ -182,7 +182,7 @@ public class ScreenWorkshopLevelDownloadFailed extends Screen
 
                 Drawing.drawing.setColor(255, 255, 255);
                 Drawing.drawing.setInterfaceFontSize(this.textSize);
-                Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX - 700 + this.objXSpace, votePosY, "Vote:");
+                Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX - 700 + this.objXSpace, votePosY, "Vote:");
 
                 Drawing.drawing.setColor(0, 200, 0);
                 Drawing.drawing.drawInterfaceText(voteUp.posX + 30, votePosY, votesUp + "", false);

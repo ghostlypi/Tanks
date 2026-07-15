@@ -137,11 +137,11 @@ public class ScreenPlaySavedLevels extends Screen
 
             if (search.inputText.length() > 0)
             {
-                Drawing.drawing.drawInterfaceText(this.centerX, this.centerY, "No levels found");
+                Drawing.drawing.displayInterfaceText(this.centerX, this.centerY, "No levels found");
             }
             else
             {
-                Drawing.drawing.drawInterfaceText(this.centerX, this.centerY, "You have no levels");
+                Drawing.drawing.displayInterfaceText(this.centerX, this.centerY, "You have no levels");
             }
         }
 

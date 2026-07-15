@@ -126,8 +126,8 @@ public class ScreenOptionsFramerate extends Screen
         {
             Drawing.drawing.setColor(0, 0, 0);
             Drawing.drawing.setInterfaceFontSize(this.textSize);
-            Drawing.drawing.drawInterfaceText(unlimited.posX, unlimited.posY - this.objYSpace / 4, "Framerate is capped to your");
-            Drawing.drawing.drawInterfaceText(unlimited.posX, unlimited.posY + this.objYSpace / 4, "display's refresh rate on mobile");
+            Drawing.drawing.displayInterfaceText(unlimited.posX, unlimited.posY - this.objYSpace / 4, "Framerate is capped to your");
+            Drawing.drawing.displayInterfaceText(unlimited.posX, unlimited.posY + this.objYSpace / 4, "display's refresh rate on mobile");
 
         }
 

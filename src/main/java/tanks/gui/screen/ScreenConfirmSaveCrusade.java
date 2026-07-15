@@ -59,7 +59,7 @@ public class ScreenConfirmSaveCrusade extends Screen implements IBlankBackground
 
         Drawing.drawing.setColor(0, 0, 0);
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3, "Save before exiting?");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3, "Save before exiting?");
 
         saveExit.draw();
         noSaveExit.draw();

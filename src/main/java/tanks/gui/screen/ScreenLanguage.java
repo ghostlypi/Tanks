@@ -40,45 +40,45 @@ public class ScreenLanguage extends Screen
             }
         }, ".lang");
 
-        languages.buttons.add(0, new Button(0, 0, 350, 40, "English", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "English", () ->
         {
             changeLanguage(null);
         }
         ));
 
-        languages.buttons.add(1, new Button(0, 0, 350, 40, "Français", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "Français", () ->
         {
             changeLanguage(new Translation("fr.lang"));
         }
         ));
 
-        /*languages.buttons.add(2, new Button(0, 0, 350, 40, "Español", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "Español", () ->
         {
             changeLanguage(new Translation("es.lang"));
         }
-        ));*/
+        ));
 
-        languages.buttons.add(2, new Button(0, 0, 350, 40, "Svenska", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "Svenska", () ->
         {
             changeLanguage(new Translation("se.lang"));
         }
         ));
 
-        /*languages.buttons.add(3, new Button(0, 0, 350, 40, "Română", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "Română", () ->
         {
             changeLanguage(new Translation("ro.lang"));
         }
-        ));*/
+        ));
 
-        languages.buttons.add(3, new Button(0, 0, 350, 40, "简体中文", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "简体中文", () ->
             changeLanguage(new Translation("zhcn.lang"))
         ));
 
-        languages.buttons.add(4, new Button(0, 0, 350, 40, "हिन्दी", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "हिन्दी", () ->
             changeLanguage(new Translation("hi.lang"))
         ));
 
-        languages.buttons.add(5, new Button(0, 0, 350, 40, "😀 Emoji ✨", () ->
+        languages.buttons.add(new Button(0, 0, 350, 40, "😀 Emoji ✨", () ->
             changeLanguage(new Translation("emoji.lang"))
         ));
 

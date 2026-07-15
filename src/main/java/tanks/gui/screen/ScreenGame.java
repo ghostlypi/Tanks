@@ -2426,7 +2426,7 @@ public class ScreenGame extends Screen implements IHiddenChatboxScreen, IPartyGa
                         Drawing.drawing.setColor(0, 0, 0);
 
                     Drawing.drawing.setInterfaceFontSize(12);
-                    Drawing.drawing.drawInterfaceText(ix, iy - Game.tile_size, "Click to spectate tank");
+                    Drawing.drawing.displayInterfaceText(ix, iy - Game.tile_size, "Click to spectate tank");
 
                     break;
                 }
@@ -3074,9 +3074,9 @@ public class ScreenGame extends Screen implements IHiddenChatboxScreen, IPartyGa
             Drawing.drawing.setInterfaceFontSize(24);
 
             if (Game.deterministic30Fps)
-                Drawing.drawing.drawInterfaceText(posX, posY, "Deterministic mode (30 FPS)", true);
+                Drawing.drawing.displayInterfaceText(posX, posY, true, "Deterministic mode (30 FPS)");
             else
-                Drawing.drawing.drawInterfaceText(posX, posY, "Deterministic mode (60 FPS)", true);
+                Drawing.drawing.displayInterfaceText(posX, posY, true, "Deterministic mode (60 FPS)");
         }
 
         if (Game.currentLevel instanceof Minigame)

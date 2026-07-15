@@ -52,9 +52,9 @@ public class ScreenJoinSteamLobby extends Screen
         Drawing.drawing.setColor(0, 0, 0);
 
         if (parties.buttons.isEmpty())
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY, "No public parties found. Why not host one?");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY, "No public parties found. Why not host one?");
         else
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.75, "Parties located geographically nearby will likely have less network lag");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.75, "Parties located geographically nearby will likely have less network lag");
 
         Drawing.drawing.setInterfaceFontSize(this.titleSize);
         Drawing.drawing.setColor(0, 0, 0);

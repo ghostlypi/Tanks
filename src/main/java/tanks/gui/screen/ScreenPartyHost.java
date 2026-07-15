@@ -365,7 +365,7 @@ public class ScreenPartyHost extends Screen
                 {
                     Drawing.drawing.setColor(0, 0, 0);
                     Drawing.drawing.setInterfaceFontSize(this.textSize);
-                    Drawing.drawing.drawInterfaceText(steamHostFailed.posX, steamHostFailed.posY, "Starting Steam party...");
+                    Drawing.drawing.displayInterfaceText(steamHostFailed.posX, steamHostFailed.posY, "Starting Steam party...");
                 }
             }
         }

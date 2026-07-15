@@ -57,14 +57,14 @@ public class SpeedrunTimer
             if (Game.screen instanceof ScreenGame)
             {
                 Drawing.drawing.setInterfaceFontSize(50);
-                Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 30, "Level: " + levelDiff);
+                Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 - 30, "Level: %s", levelDiff);
 
                 if (Level.isDark() || (Game.screen instanceof IDarkScreen && Panel.win && Game.effectsEnabled))
                     Drawing.drawing.setColor(255, 255, 255, alpha);
                 else
                     Drawing.drawing.setColor(0, 0, 0, alpha);
 
-                Drawing.drawing.drawInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 30, "Crusade: " + crusadeDiff);
+                Drawing.drawing.displayInterfaceText(Drawing.drawing.interfaceSizeX / 2, Drawing.drawing.interfaceSizeY / 2 + 30, "Crusade: %s", crusadeDiff);
 
                 levelDiff = "";
                 crusadeDiff = "";

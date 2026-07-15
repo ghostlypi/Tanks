@@ -114,8 +114,8 @@ public class OverlayStartingItems extends ScreenLevelEditorOverlay implements IC
         if (this.startingItemsList.buttons.size() <= 0)
         {
             Drawing.drawing.setInterfaceFontSize(this.textSize);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - 30, "There are no starting items in this level");
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 30, "Add some with the 'Add item' button!");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - 30, "There are no starting items in this level");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + 30, "Add some with the 'Add item' button!");
         }
 
         this.startingItemsList.draw();

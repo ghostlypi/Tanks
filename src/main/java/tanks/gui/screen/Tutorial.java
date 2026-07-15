@@ -4,6 +4,7 @@ import basewindow.ModelPart;
 import tanks.*;
 import tanks.minigames.Minigame;
 import tanks.tank.*;
+import tanks.translation.Translation;
 
 import java.util.ArrayList;
 
@@ -274,21 +275,21 @@ public class Tutorial extends Minigame
 
             if (touchscreen)
             {
-                Drawing.drawing.drawInterfaceText(TankPlayer.controlStick.posX + TankPlayer.controlStick.size * 0.6, TankPlayer.controlStick.posY, "Use this stick to move your tank!", false);
+                Drawing.drawing.displayInterfaceText(TankPlayer.controlStick.posX + TankPlayer.controlStick.size * 0.6, TankPlayer.controlStick.posY, false, "Use this stick to move your tank!");
             }
             else
             {
                 Drawing.drawing.setFontSize(24 * stepAnimation);
-                Drawing.drawing.drawText(Game.playerTank.posX, Game.playerTank.posY - 140 * stepAnimation, "Move up:");
+                Drawing.drawing.drawText(Game.playerTank.posX, Game.playerTank.posY - 140 * stepAnimation, Translation.translate("Move up:"));
                 Drawing.drawing.drawText(Game.playerTank.posX, Game.playerTank.posY - 110 * stepAnimation, Game.game.input.moveUp.getInputs());
 
-                Drawing.drawing.drawText(Game.playerTank.posX, Game.playerTank.posY + 110 * stepAnimation, "Move down:");
+                Drawing.drawing.drawText(Game.playerTank.posX, Game.playerTank.posY + 110 * stepAnimation, Translation.translate("Move down:"));
                 Drawing.drawing.drawText(Game.playerTank.posX, Game.playerTank.posY + 140 * stepAnimation, Game.game.input.moveDown.getInputs());
 
-                Drawing.drawing.drawText(Game.playerTank.posX - 150 * stepAnimation, Game.playerTank.posY - 15 * stepAnimation, "Move left:");
+                Drawing.drawing.drawText(Game.playerTank.posX - 150 * stepAnimation, Game.playerTank.posY - 15 * stepAnimation, Translation.translate("Move left:"));
                 Drawing.drawing.drawText(Game.playerTank.posX - 150 * stepAnimation, Game.playerTank.posY + 15 * stepAnimation, Game.game.input.moveLeft.getInputs());
 
-                Drawing.drawing.drawText(Game.playerTank.posX + 150 * stepAnimation, Game.playerTank.posY - 15 * stepAnimation, "Move right:");
+                Drawing.drawing.drawText(Game.playerTank.posX + 150 * stepAnimation, Game.playerTank.posY - 15 * stepAnimation, Translation.translate("Move right:"));
                 Drawing.drawing.drawText(Game.playerTank.posX + 150 * stepAnimation, Game.playerTank.posY + 15 * stepAnimation, Game.game.input.moveRight.getInputs());
             }
 
@@ -327,7 +328,7 @@ public class Tutorial extends Minigame
 
             Drawing.drawing.setFontSize(24 * this.stepAnimation);
             Drawing.drawing.setColor(0, 0, 0, 255 * this.stepAnimation);
-            Drawing.drawing.drawText(20 * Game.tile_size, 13.5 * Game.tile_size, "Shoot these enemy tanks!");
+            Drawing.drawing.drawText(20 * Game.tile_size, 13.5 * Game.tile_size, Translation.translate("Shoot these enemy tanks!"));
 
             Drawing.drawing.setColor(255, 127, 0, 64);
 
@@ -347,8 +348,8 @@ public class Tutorial extends Minigame
         {
             Drawing.drawing.setFontSize(24 * this.stepAnimation);
             Drawing.drawing.setColor(0, 0, 0, 255 * this.stepAnimation);
-            Drawing.drawing.drawText(22 * Game.tile_size, 2.5 * Game.tile_size, "Aim and bounce your bullets on");
-            Drawing.drawing.drawText(22 * Game.tile_size, 3.5 * Game.tile_size, "a wall to destroy this tank!");
+            Drawing.drawing.drawText(22 * Game.tile_size, 2.5 * Game.tile_size, Translation.translate("Aim and bounce your bullets on"));
+            Drawing.drawing.drawText(22 * Game.tile_size, 3.5 * Game.tile_size, Translation.translate("a wall to destroy this tank!"));
 
             Drawing.drawing.setColor(255, 127, 0, 64 * this.stepAnimation);
             Drawing.drawing.fillOval(dummy5.posX, dummy5.posY, Game.tile_size * 2 * this.stepAnimation, Game.tile_size * 2 * this.stepAnimation);
@@ -384,8 +385,8 @@ public class Tutorial extends Minigame
             Drawing.drawing.setFontSize(24 * this.stepAnimation);
             Drawing.drawing.setColor(0, 0, 0, 255 * this.stepAnimation);
 
-            Drawing.drawing.drawText(23.5 * Game.tile_size, 12 * Game.tile_size, "Place a mine next to this");
-            Drawing.drawing.drawText(23.5 * Game.tile_size, 13 * Game.tile_size, "brown wall to destroy it!");
+            Drawing.drawing.drawText(23.5 * Game.tile_size, 12 * Game.tile_size, Translation.translate("Place a mine next to this"));
+            Drawing.drawing.drawText(23.5 * Game.tile_size, 13 * Game.tile_size, Translation.translate("brown wall to destroy it!"));
 
             drawBottomBar(200 * this.stepAnimation);
             Drawing.drawing.setColor(255, 255, 255, 255 * this.stepAnimation);
@@ -417,8 +418,8 @@ public class Tutorial extends Minigame
                     Mine.drawRange2D(m.posX, m.posY, ((Mine) m).explosion.radius);
 
                     Drawing.drawing.setColor(0, 0, 0, 255 * this.stepAnimation);
-                    Drawing.drawing.drawText(m.posX, m.posY + 50 * this.stepAnimation, "Stand back!");
-                    Drawing.drawing.drawText(m.posX, m.posY + 100 * this.stepAnimation, "Your mines can destroy you!");
+                    Drawing.drawing.drawText(m.posX, m.posY + 50 * this.stepAnimation, Translation.translate("Stand back!"));
+                    Drawing.drawing.drawText(m.posX, m.posY + 100 * this.stepAnimation, Translation.translate("Your mines can destroy you!"));
                 }
             }
 
@@ -433,11 +434,11 @@ public class Tutorial extends Minigame
         {
             Drawing.drawing.setFontSize(24 * this.stepAnimation);
             Drawing.drawing.setColor(0, 0, 0, 255 * this.stepAnimation);
-            Drawing.drawing.drawText(32.5 * Game.tile_size, 3.5 * Game.tile_size, "Watch out! This brown");
-            Drawing.drawing.drawText(32.5 * Game.tile_size, 4.5 * Game.tile_size, "tank will shoot at you!");
+            Drawing.drawing.drawText(32.5 * Game.tile_size, 3.5 * Game.tile_size, Translation.translate("Watch out! This brown"));
+            Drawing.drawing.drawText(32.5 * Game.tile_size, 4.5 * Game.tile_size, Translation.translate("tank will shoot at you!"));
 
-            Drawing.drawing.drawText(32.5 * Game.tile_size, 6.5 * Game.tile_size, "Shoot it before");
-            Drawing.drawing.drawText(32.5 * Game.tile_size, 7.5 * Game.tile_size, "it destroys you!");
+            Drawing.drawing.drawText(32.5 * Game.tile_size, 6.5 * Game.tile_size, Translation.translate("Shoot it before"));
+            Drawing.drawing.drawText(32.5 * Game.tile_size, 7.5 * Game.tile_size, Translation.translate("it destroys you!"));
 
             Drawing.drawing.setColor(255, 127, 0, 64 * this.stepAnimation);
             Drawing.drawing.fillOval(brown.posX, brown.posY, Game.tile_size * 2 * this.stepAnimation, Game.tile_size * 2 * this.stepAnimation);

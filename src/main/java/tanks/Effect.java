@@ -8,6 +8,7 @@ import tanks.minigames.Arcade;
 import tanks.obstacle.Obstacle;
 import tanks.rendering.TrackRenderer;
 import tanks.tank.*;
+import tanks.translation.Translation;
 
 public class Effect extends Movable implements IDrawableWithGlow, IBatchRenderableObject, IDrawableLightSource
 {
@@ -613,9 +614,9 @@ public class Effect extends Movable implements IDrawableWithGlow, IBatchRenderab
 
                 drawing.setFontSize(8 * this.size / Game.tile_size);
                 drawing.setColor(col[0] / 2, col[1] / 2, col[2] / 2, a, 0.5);
-                drawing.drawText(this.posX + 2, this.posY - this.size / 20 + 22, this.posZ + this.age, "chain!");
+                drawing.drawText(this.posX + 2, this.posY - this.size / 20 + 22, this.posZ + this.age, Translation.translate("chain!"));
                 drawing.setColor(col[0], col[1], col[2], a, 0.5);
-                drawing.drawText(this.posX, this.posY - this.size / 20 + 20, this.posZ + this.age + 1, "chain!");
+                drawing.drawText(this.posX, this.posY - this.size / 20 + 20, this.posZ + this.age + 1, Translation.translate("chain!"));
             }
             else
             {
@@ -627,9 +628,9 @@ public class Effect extends Movable implements IDrawableWithGlow, IBatchRenderab
 
                 drawing.setFontSize(8 * this.size / Game.tile_size);
                 drawing.setColor(col[0] / 2, col[1] / 2, col[2] / 2, a, 0.5);
-                drawing.drawText(this.posX + 2, this.posY - this.size / 20 + 22, "chain!");
+                drawing.drawText(this.posX + 2, this.posY - this.size / 20 + 22, Translation.translate("chain!"));
                 drawing.setColor(col[0], col[1], col[2], a, 0.5);
-                drawing.drawText(this.posX, this.posY - this.size / 20 + 20, "chain!");
+                drawing.drawText(this.posX, this.posY - this.size / 20 + 20, Translation.translate("chain!"));
 
             }
         }

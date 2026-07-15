@@ -108,9 +108,9 @@ public class ScreenCinematicTitle extends Screen implements ISeparateBackgroundS
             Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 170, "Update 1.6");
             Drawing.drawing.setInterfaceFontSize(64 * t2 / 75);
             Drawing.drawing.setColor(0, 127, 127, a);
-            Drawing.drawing.drawInterfaceText(this.centerX + 2, this.centerY + 342, "Steam Workshop, player builds, and crazy new items!");
+            Drawing.drawing.displayInterfaceText(this.centerX + 2, this.centerY + 342, "Steam Workshop, player builds, and crazy new items!");
             Drawing.drawing.setColor(0, 255, 255, a);
-            Drawing.drawing.drawInterfaceText(this.centerX, this.centerY + 340, "Steam Workshop, player builds, and crazy new items!");
+            Drawing.drawing.displayInterfaceText(this.centerX, this.centerY + 340, "Steam Workshop, player builds, and crazy new items!");
 
         }
 

@@ -402,7 +402,7 @@ public class ScreenCrusadePreview extends Screen implements ICrusadePreviewScree
 
                 Drawing.drawing.setColor(255, 255, 255);
                 Drawing.drawing.setInterfaceFontSize(this.textSize);
-                Drawing.drawing.drawInterfaceText(this.centerX + this.objXSpace - 120, votePosY, "Vote:");
+                Drawing.drawing.displayInterfaceText(this.centerX + this.objXSpace - 120, votePosY, "Vote:");
 
                 Drawing.drawing.setColor(0, 200, 0);
                 Drawing.drawing.drawInterfaceText(voteUp.posX + 30, votePosY, votesUp + "", false);

@@ -166,7 +166,7 @@ public class ScreenSelectorMusic extends Screen implements IConditionalOverlaySc
 
         Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 4.5, this.title);
         Drawing.drawing.setInterfaceFontSize(this.textSize);
-        Drawing.drawing.drawInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.8, "You may select multiple options");
+        Drawing.drawing.displayInterfaceText(this.centerX, this.centerY - this.objYSpace * 3.8, "You may select multiple options");
     }
 
     @Override

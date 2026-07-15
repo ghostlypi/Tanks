@@ -329,8 +329,8 @@ public class ScreenArcadeBonuses extends Screen implements IDarkScreen
             drawing.displayInterfaceText(50, 290, false, "Also, you may want to report this crash!");
 
             drawing.displayInterfaceText(50, 350, false, "Crash details:");
-            drawing.drawInterfaceText(50, 380, "Error 404: Bonus not found!", false);
-            drawing.drawInterfaceText(50, 410, "This isn't an actual crash lmao", false);
+            drawing.displayInterfaceText(50, 380, false, "Error 404: Bonus not found!");
+            drawing.displayInterfaceText(50, 410, false, "This isn't an actual crash lmao");
 
             drawing.displayInterfaceText(50, 470, false, "Check the crash report file for more information: ");
             drawing.drawInterfaceText(50, 500, Game.homedir.replace("\\", "/") + Game.crashesPath + "lmaothisisnta.crash", false);

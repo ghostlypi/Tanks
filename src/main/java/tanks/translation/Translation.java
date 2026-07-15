@@ -2,6 +2,7 @@ package tanks.translation;
 
 import basewindow.BaseFile;
 import tanks.Game;
+import tanks.tankson.TanksON;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,26 +21,6 @@ public class Translation
     public static final String prefix_untranslated = "\u00A7255000000255";
     public static final String suffix = "\u00A7r";
 
-    public void initialize(ArrayList<String> translations)
-    {
-        boolean first = true;
-
-        for (String s: translations)
-        {
-            if (first)
-            {
-                first = false;
-                this.name = s;
-                continue;
-            }
-
-            String[] parts = s.split("=");
-
-            if (parts.length > 1 && !parts[1].equals(""))
-                this.translations.put(parts[0], parts[1]);
-        }
-    }
-
     public Translation(String fileName)
     {
         if (fileName.startsWith("internal/"))
@@ -47,15 +28,19 @@ public class Translation
 
         this.fileName = "internal/" + fileName;
 
-        ArrayList<String> translations = Game.game.fileManager.getInternalFileContents("/translations/" + fileName);
-        this.initialize(translations);
+        ArrayList<String> lines = Game.game.fileManager.getInternalFileContents("/translations/" + fileName);
+        StringBuilder json = new StringBuilder();
+        for (String line : lines) {
+            json.append(line);
+        }
+        translations = (HashMap<String, String>) TanksON.parseObject(json.toString());
     }
 
     public Translation(BaseFile f)
     {
         this.fileName = f.path;
 
-        ArrayList<String> texts = new ArrayList<>();
+        StringBuilder json = new StringBuilder();
 
         try
         {
@@ -63,7 +48,7 @@ public class Translation
 
             while (f.hasNextLine())
             {
-                texts.add(f.nextLine());
+                json.append(f.nextLine());
             }
 
             f.stopReading();
@@ -73,7 +58,7 @@ public class Translation
             Game.exitToCrash(e);
         }
 
-        this.initialize(texts);
+        translations = (HashMap<String, String>) TanksON.parseObject(json.toString());
     }
 
 

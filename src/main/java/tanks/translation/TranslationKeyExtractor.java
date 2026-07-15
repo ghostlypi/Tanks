@@ -28,6 +28,15 @@ public class TranslationKeyExtractor
     private static final String OUTPUT_LOCATIONS = "locations";
     private static final String OUTPUT_LANG = "lang";
 
+    /**
+     * Maps {@code String} constant names (both the bare {@code NAME} and the qualified {@code ClassName.NAME}) to
+     * their literal value. Populated by a first pass over the source so that sink arguments referencing a constant
+     * (e.g. {@code setText(infoBarText, ScreenOptions.onText)}) can be resolved to the actual translation key.
+     */
+    private static final Map<String, String> CONSTANTS = new HashMap<>();
+    private static final java.util.regex.Pattern STRING_FIELD =
+            java.util.regex.Pattern.compile("(?<![A-Za-z0-9_.$])String\\s+([A-Za-z_$][A-Za-z0-9_$]*)\\s*=");
+
     public static void main(String[] args) throws IOException
     {
         Config config = parseArgs(args);
@@ -45,6 +54,8 @@ public class TranslationKeyExtractor
         int[] fileCount = {0};
 
         final Path scanRoot = root;
+
+        collectConstants(scanRoot);
 
         try (Stream<Path> stream = Files.walk(scanRoot))
         {
@@ -84,6 +95,116 @@ public class TranslationKeyExtractor
             System.out.println("Scanned " + fileCount[0] + " Java files");
             System.out.println("Found " + results.size() + " unique candidate translation keys");
         }
+    }
+
+    /**
+     * First pass: record every {@code String NAME = <literal expression>} declaration so later sink arguments that
+     * reference a constant can be resolved. Resolution is iterated so constants defined in terms of other constants
+     * (or in a different file) eventually settle.
+     */
+    private static void collectConstants(Path root) throws IOException
+    {
+        List<String[]> decls = new ArrayList<>(); // {name, className, initializerExpr}
+
+        List<Path> files = new ArrayList<>();
+        try (Stream<Path> stream = Files.walk(root))
+        {
+            stream.filter(Files::isRegularFile).filter(p -> p.toString().endsWith(".java")).sorted().forEach(files::add);
+        }
+
+        for (Path path: files)
+        {
+            String text = new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
+            String fileName = path.getFileName().toString();
+            String className = fileName.endsWith(".java") ? fileName.substring(0, fileName.length() - 5) : fileName;
+
+            java.util.regex.Matcher m = STRING_FIELD.matcher(text);
+            while (m.find())
+            {
+                int eq = m.end(); // index just after '='
+                int end = findTopLevelSemicolon(text, eq);
+                if (end < 0)
+                    continue;
+                String init = text.substring(eq, end).trim();
+                if (!init.isEmpty())
+                    decls.add(new String[]{m.group(1), className, init});
+            }
+        }
+
+        // Iterate so chained/cross-file references resolve.
+        boolean changed = true;
+        int guard = 0;
+        while (changed && guard++ < 5)
+        {
+            changed = false;
+            for (String[] d: decls)
+            {
+                String qualified = d[1] + "." + d[0];
+                if (CONSTANTS.containsKey(qualified))
+                    continue;
+
+                Set<String> values = approximateStringValues(d[2]);
+                if (values == null || values.size() != 1)
+                    continue;
+
+                String value = values.iterator().next();
+                CONSTANTS.put(qualified, value);
+                CONSTANTS.putIfAbsent(d[0], value); // bare name: first definition wins on collision
+                changed = true;
+            }
+        }
+    }
+
+    private static int findTopLevelSemicolon(String text, int start)
+    {
+        int paren = 0, bracket = 0, brace = 0;
+        int i = start;
+        while (i < text.length())
+        {
+            char c = text.charAt(i);
+            if (c == '"') { i = skipQuoted(text, i, '"'); continue; }
+            if (c == '\'') { i = skipQuoted(text, i, '\''); continue; }
+            if (c == '/' && i + 1 < text.length())
+            {
+                char n = text.charAt(i + 1);
+                if (n == '/') { i = skipLineComment(text, i + 2); continue; }
+                if (n == '*') { i = skipBlockComment(text, i + 2); continue; }
+            }
+
+            if (c == '(') paren++;
+            else if (c == ')') paren--;
+            else if (c == '[') bracket++;
+            else if (c == ']') bracket--;
+            else if (c == '{') brace++;
+            else if (c == '}') brace--;
+            else if (c == ';' && paren == 0 && bracket == 0 && brace == 0)
+                return i;
+
+            i++;
+        }
+        return -1;
+    }
+
+    private static boolean isIdentifierPath(String expr)
+    {
+        if (expr.isEmpty())
+            return false;
+        boolean start = true;
+        for (int i = 0; i < expr.length(); i++)
+        {
+            char c = expr.charAt(i);
+            if (start)
+            {
+                if (!Character.isJavaIdentifierStart(c))
+                    return false;
+                start = false;
+            }
+            else if (c == '.')
+                start = true;
+            else if (!Character.isJavaIdentifierPart(c))
+                return false;
+        }
+        return !start;
     }
 
     private static Config parseArgs(String[] args)
@@ -155,6 +276,10 @@ public class TranslationKeyExtractor
                 extractCallFirstArgument(text, idx + needle.length() - 1, relative, lines, results);
         }
 
+        // setText(text, text2) translates BOTH arguments (e.g. setText(infoBarText, ScreenOptions.onText)).
+        for (int idx: findOccurrences(text, ".setText("))
+            extractCallArgIfString(text, idx + ".setText(".length() - 1, 1, relative, lines, results);
+
         for (String type: GUI_CONSTRUCTORS)
         {
             String needle = "new " + type + "(";
@@ -166,6 +291,37 @@ public class TranslationKeyExtractor
         {
             for (int idx: findOccurrences(text, annotation))
                 extractAnnotationStrings(text, idx + annotation.length() - 1, relative, lines, results);
+        }
+
+        for (String method: Arrays.asList("displayInterfaceText", "displayUncenteredInterfaceText"))
+        {
+            String needle = "." + method + "(";
+            for (int idx: findOccurrences(text, needle))
+                extractDisplayTextArgument(text, idx + needle.length() - 1, relative, lines, results);
+        }
+    }
+
+    /**
+     * Extracts the translated text argument from a {@code displayInterfaceText}/{@code displayUncenteredInterfaceText}
+     * call. The signature is {@code (x, y, [boolean rightAligned,] String text, Object... objects)}, so the text is the
+     * first string-valued argument at or after index 2.
+     */
+    private static void extractDisplayTextArgument(String text, int openParenIndex, String relative, LineMap lines,
+                                                   TreeMap<String, TreeSet<String>> results)
+    {
+        String argsText = extractBalanced(text, openParenIndex, '(', ')');
+        if (argsText == null)
+            return;
+
+        List<String> args = splitTopLevel(argsText);
+        for (int idx = 2; idx < args.size(); idx++)
+        {
+            Set<String> values = approximateStringValues(args.get(idx));
+            if (values != null)
+            {
+                addValues(values, relative, lines.lineNumber(openParenIndex), results);
+                return;
+            }
         }
     }
 
@@ -181,6 +337,27 @@ public class TranslationKeyExtractor
             return;
 
         addValues(approximateStringValues(args.get(0)), relative, lines.lineNumber(openParenIndex), results);
+    }
+
+    /**
+     * Adds the argument at {@code argIndex} only if it resolves to a string value (literal, constant, or
+     * concatenation). Used for {@code setText(text, text2)} where the 2nd arg is also translated but may instead
+     * be a non-string format argument in the {@code setText(text, Object...)} overload.
+     */
+    private static void extractCallArgIfString(String text, int openParenIndex, int argIndex, String relative,
+                                               LineMap lines, TreeMap<String, TreeSet<String>> results)
+    {
+        String argsText = extractBalanced(text, openParenIndex, '(', ')');
+        if (argsText == null)
+            return;
+
+        List<String> args = splitTopLevel(argsText);
+        if (argIndex >= args.size())
+            return;
+
+        Set<String> values = approximateStringValues(args.get(argIndex));
+        if (values != null)
+            addValues(values, relative, lines.lineNumber(openParenIndex), results);
     }
 
     private static void extractConstructorStrings(String type, String text, int openParenIndex, String relative,
@@ -264,39 +441,23 @@ public class TranslationKeyExtractor
 
     private static String clean(String value)
     {
-        if (value == null)
+        if (value == null || value.isEmpty())
             return null;
 
-        String v = value.trim();
-        if (v.isEmpty())
-            return null;
-
-        if (v.startsWith("\u00A7"))
-        {
-            int i = 0;
-            while (i + 1 < v.length() && v.charAt(i) == '\u00A7')
-            {
-                i += 2;
-                while (i < v.length() && Character.isDigit(v.charAt(i)))
-                    i++;
-            }
-            v = v.substring(Math.min(i, v.length())).trim();
-        }
-
-        if (v.isEmpty())
-            return null;
-
+        // The value is returned verbatim (whitespace and leading color codes preserved): the runtime looks up the
+        // exact string it was given, including any trailing ": " on a label or leading "\u00A7NNNNNNNNNNNN" color code,
+        // so the extracted key must match byte-for-byte. Only require at least one letter to drop pure numbers/symbols.
         boolean hasLetter = false;
-        for (int i = 0; i < v.length(); i++)
+        for (int i = 0; i < value.length(); i++)
         {
-            if (Character.isLetter(v.charAt(i)))
+            if (Character.isLetter(value.charAt(i)))
             {
                 hasLetter = true;
                 break;
             }
         }
 
-        return hasLetter ? v : null;
+        return hasLetter ? value : null;
     }
 
     private static boolean isProbablyStringExpression(String expr)
@@ -315,6 +476,9 @@ public class TranslationKeyExtractor
 
         if (isStringLiteral(expr))
             return Collections.singleton(unescapeJavaString(expr.substring(1, expr.length() - 1)));
+
+        if (isIdentifierPath(expr) && CONSTANTS.containsKey(expr))
+            return Collections.singleton(CONSTANTS.get(expr));
 
         TernarySplit ternary = splitTopLevelTernary(expr);
         if (ternary != null)
@@ -402,14 +566,12 @@ public class TranslationKeyExtractor
             {
                 if (c == '"')
                 {
-                    state = State.STRING;
-                    i++;
+                    i = skipQuoted(text, i, '"');
                     continue;
                 }
                 if (c == '\'')
                 {
-                    state = State.CHAR;
-                    i++;
+                    i = skipQuoted(text, i, '\'');
                     continue;
                 }
                 if (c == '/' && i + 1 < text.length())
@@ -765,7 +927,9 @@ public class TranslationKeyExtractor
 
     private static boolean isStringLiteral(String expr)
     {
-        return expr.length() >= 2 && expr.charAt(0) == '"' && expr.charAt(expr.length() - 1) == '"';
+        // A single complete literal: the first string literal (starting at index 0) spans the whole expression.
+        // This avoids treating a concatenation like "a" + "b" as one literal (which would leak the raw " + ").
+        return expr.length() >= 2 && expr.charAt(0) == '"' && skipQuoted(expr, 0, '"') == expr.length();
     }
 
     private static String unescapeJavaString(String raw)
