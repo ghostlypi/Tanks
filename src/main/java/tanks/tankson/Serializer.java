@@ -175,6 +175,7 @@ public final class Serializer
     public static String toTanksON(Object o)
     {
         String shebang = "/*TANKSON v" + TANKSON_VERSION + "*/";
+        System.out.println(Base64.getEncoder().encodeToString(ObjectBuffer.toBytes(toMap(o))));
         return shebang + TanksON.toString(toMap(o));
     }
 
