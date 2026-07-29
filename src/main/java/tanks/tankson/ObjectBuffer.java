@@ -2,12 +2,17 @@ package tanks.tankson;
 
 import basewindow.Color;
 import basewindow.IModel;
+import javafx.util.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.AbstractCollection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 
 public class ObjectBuffer
 {
@@ -26,8 +31,8 @@ public class ObjectBuffer
         LONG((byte) 0xA4),
 
         // Floats
-        FP8((byte) 0xB0),
-        FP16((byte) 0xB1),
+//        FP8((byte) 0xB0),    Pulling these out for now because they are not used in Java
+//        FP16((byte) 0xB1),   Pulling these out for now because they are not used in Java
         FLOAT((byte) 0xB2),
         DOUBLE((byte) 0xB3),
 
@@ -94,7 +99,7 @@ public class ObjectBuffer
     }
 
     /** SipHash-2-4 of the UTF-8 bytes of the given id. */
-    private static long hash(String id)
+    public static long hash(String id)
     {
         byte[] m = id.getBytes(StandardCharsets.UTF_8);
 
@@ -143,7 +148,7 @@ public class ObjectBuffer
             v2 += v1; v1 = Long.rotateLeft(v1, 17); v1 ^= v2; v2 = Long.rotateLeft(v2, 32);
         }
 
-        return v0 ^ v1 ^ v2 ^ v3;
+        return (v0 ^ v1 ^ v2 ^ v3) << 8 >> 8;
     }
 
     public static byte[] toBytes(Object o)
@@ -169,86 +174,88 @@ public class ObjectBuffer
         if (o instanceof HashMap)
         {
             HashMap<?, ?> h = (HashMap<?, ?>) o;
-            ArrayList<String> keys = new ArrayList<>((Collection<? extends String>) h.keySet());
-            if (keys.remove("name"))
-                keys.add(0, "name");
+            ArrayList<Long> keys = new ArrayList<>((Collection<? extends Long>) h.keySet());
+            if (keys.remove(hash("name")))
+                keys.add(0, hash("name"));
 
-            if (keys.remove("obj_type"))
-                keys.add(0, "obj_type");
+            if (keys.remove(hash("obj_type")))
+                keys.add(0, hash("obj_type"));
 
-            for (String el: keys)
+            for (long el: keys)
             {
                 Object v = h.get(el);
 
                 if(v == null)
                 {
-                    b.writeLong(getTag(Type.NULL, hash(el)));
+                    b.writeLong(getTag(Type.NULL, el));
                 }
                 else if (v instanceof Boolean)
                 {
-                    b.writeLong(getTag(((boolean) v) ? Type.TRUE : Type.FALSE, hash(el)));
+                    b.writeLong(getTag(((boolean) v) ? Type.TRUE : Type.FALSE, el));
                 }
                 else if (v instanceof Character)
                 {
-                    b.writeLong(getTag(Type.CHAR, hash(el)));
+                    b.writeLong(getTag(Type.CHAR, el));
                     b.writeChar((char) v);
                 }
                 else if (v instanceof Short)
                 {
-                    b.writeLong(getTag(Type.SHORT, hash(el)));
+                    b.writeLong(getTag(Type.SHORT, el));
                     b.writeShort((short) v);
                 }
                 else if (v instanceof Integer)
                 {
-                    b.writeLong(getTag(Type.INT, hash(el)));
+                    b.writeLong(getTag(Type.INT, el));
                     b.writeInt((int) v);
                 }
                 else if (v instanceof Long)
                 {
-                    b.writeLong(getTag(Type.LONG, hash(el)));
+                    b.writeLong(getTag(Type.LONG, el));
                     b.writeLong((long) v);
                 }
                 else if (v instanceof Float)
                 {
-                    b.writeLong(getTag(Type.FLOAT, hash(el)));
+                    b.writeLong(getTag(Type.FLOAT, el));
                     b.writeFloat((float) v);
                 }
                 else if (v instanceof Double)
                 {
                     if (((Double) v).isInfinite())
-                        b.writeLong(getTag(Type.INF, hash(el)));
+                        b.writeLong(getTag(Type.INF, el));
                     else
                     {
-                        b.writeLong(getTag(Type.DOUBLE, hash(el)));
+                        b.writeLong(getTag(Type.DOUBLE, el));
                         b.writeDouble((double) v);
                     }
                 }
                 else if (v instanceof String)
                 {
-                    b.writeLong(getTag(Type.STRING, hash(el)));
+                    b.writeLong(getTag(Type.STRING, el));
                     b.write(((String) v).getBytes(StandardCharsets.UTF_16));
+                    b.writeByte(0);
                     b.writeByte(0);
                 }
                 else if (v instanceof Enum)
                 {
-                    b.writeLong(getTag(Type.ENUM, hash(el)));
+                    b.writeLong(getTag(Type.ENUM, el));
                     b.write(v.toString().getBytes(StandardCharsets.UTF_16));
+                    b.writeByte(0);
                     b.writeByte(0);
                 }
                 else if (v instanceof IModel)
                 {
-                    b.writeLong(getTag(Type.IModel, hash(el)));
+                    b.writeLong(getTag(Type.IModel, el));
                     b.write(v.toString().getBytes(StandardCharsets.UTF_16));
                 }
                 else if (v instanceof AbstractCollection)
                 {
-                    b.writeLong(getTag(Type.LIST, hash(el)));
+                    b.writeLong(getTag(Type.LIST, el));
                     writeTo(b, v);
                 }
                 else if (v instanceof Color)
                 {
                     Color c = ((Color) v);
-                    b.writeLong(getTag(Type.COLOR, hash(el)));
+                    b.writeLong(getTag(Type.COLOR, el));
                     b.writeDouble(c.red);
                     b.writeDouble(c.green);
                     b.writeDouble(c.blue);
@@ -256,11 +263,11 @@ public class ObjectBuffer
                 }
                 else if (v instanceof HashMap)
                 {
-                    b.writeLong(getTag(Type.OBJECT, hash(el)));
+                    b.writeLong(getTag(Type.OBJECT, el));
                     writeTo(b, v);
                 }
             }
-            b.writeByte(0);
+            b.writeLong(0L);
         }
         else if (o instanceof AbstractCollection)
         {
@@ -316,11 +323,13 @@ public class ObjectBuffer
                     b.writeLong(getTag(Type.STRING, counter));
                     b.write(((String) el).getBytes(StandardCharsets.UTF_16));
                     b.writeByte(0);
+                    b.writeByte(0);
                 }
                 else if (el instanceof Enum)
                 {
                     b.writeLong(getTag(Type.ENUM, counter));
                     b.write(el.toString().getBytes(StandardCharsets.UTF_16));
+                    b.writeByte(0);
                     b.writeByte(0);
                 }
                 else if (el instanceof IModel)
@@ -349,10 +358,157 @@ public class ObjectBuffer
                 }
                 counter++;
             }
+            b.writeLong(0L);
         }
         else
         {
             throw new RuntimeException("Unable to convert Object of type: " + o.getClass().getName());
         }
+    }
+
+    protected static class ParserState
+    {
+        ByteBuffer buffer;
+        int depth;
+
+        public ParserState(byte[] buffer)
+        {
+            depth = 0;
+            this.buffer = ByteBuffer.wrap(buffer);
+        }
+
+        public static HashMap<Long, Object> parse(ParserState state)
+        {
+            HashMap<Long, Object> result = new HashMap<>();
+            while (state.buffer.hasRemaining())
+            {
+                Pair<Long, Object> p = state.parse();
+                result.put(p.getKey(), p.getValue());
+            }
+            return result;
+        }
+
+        public Pair<Long, Object> parse()
+        {
+            long tag = buffer.getLong();
+            long id = getId(tag);
+            switch (getType(tag))
+            {
+                //Primatives
+                case NULL:
+                {
+                    if (getId(tag) == 0)
+                        depth--;
+                    return new Pair<>(id, null);
+                }
+                case TRUE:
+                    return new Pair<>(id, true);
+                case FALSE:
+                    return new Pair<>(id, false);
+                case INF:
+                    return new Pair<>(id, Double.POSITIVE_INFINITY);
+
+                //Integers
+                case CHAR:
+                    return new Pair<>(id, buffer.getChar());
+                case SHORT:
+                    return new Pair<>(id, buffer.getShort());
+                case INT:
+                    return new Pair<>(id, buffer.getInt());
+                case LONG:
+                    return new Pair<>(id, buffer.getLong());
+
+                //Float
+                case FLOAT:
+                    return new Pair<>(id, buffer.getFloat());
+                case DOUBLE:
+                    return new Pair<>(id, buffer.getDouble());
+
+                //Variable Length
+                case ENUM:
+                {
+                    StringBuilder sb = new StringBuilder();
+                    while (buffer.hasRemaining())
+                    {
+                        byte b1 = buffer.get();
+                        byte b2 = buffer.get();
+                        if (b1 == 0 && b2 == 0)
+                            break;
+                        sb.append(new String(new byte[]{b1, b2}, StandardCharsets.UTF_16));
+                    }
+                    return new Pair<>(id, sb.toString());
+                }
+                case STRING:
+                {
+                    StringBuilder sb = new StringBuilder();
+                    while (buffer.hasRemaining())
+                    {
+                        byte b1 = buffer.get();
+                        byte b2 = buffer.get();
+                        if (b1 == 0 && b2 == 0)
+                            break;
+                        sb.append(new String(new byte[]{b1, b2}, StandardCharsets.UTF_16));
+                    }
+                    return new Pair<>(id, sb.toString());
+                }
+                case OBJECT:
+                {
+                    HashMap<Long, Object> h = new HashMap<>();
+                    int target = depth++;
+                    while(depth > target) {
+                        Pair<Long, Object> kv = parse();
+                        long k = kv.getKey();
+                        Object v = kv.getValue();
+                        if (k == 0 && v == null&& depth == target+1)
+                            break;
+                        h.put(k,v);
+                    }
+                    return new Pair<>(id, h);
+                }
+                case LIST:
+                {
+                    ArrayList<Object> a = new ArrayList<>();
+                    int target = depth++;
+                    while(depth > target) {
+                        Pair<Long, Object> kv = parse();
+                        long k = kv.getKey();
+                        Object v = kv.getValue();
+                        if (k == 0 && v == null && depth == target+1)
+                            break;
+                        a.add(kv.getValue());
+                    }
+                    return new Pair<>(id, a);
+                }
+
+                //Tanks Specific Objects
+                case COLOR:
+                {
+                    Color c = new Color(buffer.getDouble(), buffer.getDouble(), buffer.getDouble(), buffer.getDouble());
+                    return new Pair<>(id, c);
+                }
+                case IModel:
+                {
+                    StringBuilder sb = new StringBuilder();
+                    while (buffer.hasRemaining())
+                    {
+                        byte b1 = buffer.get();
+                        byte b2 = buffer.get();
+                        if (b1 == 0 && b2 == 0)
+                            break;
+                        sb.append(new String(new byte[]{b1, b2}, StandardCharsets.UTF_16));
+                    }
+                    return new Pair<>(id, sb.toString());
+                }
+
+                default:
+                    throw new RuntimeException("Unknown type: " + getType(tag));
+            }
+
+        }
+    }
+
+    public static HashMap<Long, Object> parse(byte[] buffer)
+    {
+        return ParserState.parse(new ParserState(buffer));
     }
 }
