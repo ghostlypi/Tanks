@@ -6,6 +6,7 @@ import basewindow.transformation.*;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
+import java.nio.Buffer;
 import java.util.HashMap;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -40,7 +41,7 @@ public class VBOPosedModel extends PosedModel
                 }
             }
 
-            bones.flip();
+            ((Buffer) bones).flip();
 
             ((LWJGLWindow) this.model.window).vertexBufferData(vbo, bones);
         }

@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.nio.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.Buffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -85,12 +86,12 @@ public class SoundPlayer extends BaseSoundPlayer
                 if (!buffer.hasRemaining())
                 {
                     ByteBuffer bigger = ByteBuffer.allocateDirect(buffer.capacity() * 2);
-                    buffer.flip();
+                    ((Buffer) buffer).flip();
                     bigger.put(buffer);
                     buffer = bigger;
                 }
             }
-            buffer.flip();
+            ((Buffer) buffer).flip();
             return buffer;
         }
     }

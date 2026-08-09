@@ -3,13 +3,16 @@ package tanks.tankson;
 import basewindow.Color;
 import tanks.Game;
 import tanks.Team;
-import tanks.bullet.*;
+import tanks.bullet.Bullet;
+import tanks.bullet.BulletEffect;
+import tanks.bullet.Trail;
 import tanks.item.Item;
 import tanks.tank.*;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +36,14 @@ public final class Serializer
             version = m.group(1);
 
         return version;
+    }
+
+    public static String getVersion(byte[] b)
+    {
+        ByteBuffer buf = ByteBuffer.wrap(b);
+        long v = buf.getLong();
+        String[] version = new String[]{Integer.toString((int) (v >> 32)), Integer.toString((int) (v & 0xFFFFFFFF))};
+        return version[0] + "." + version[1];
     }
 
     public static Class<?> getCorrectClass(Object o)
@@ -200,7 +211,7 @@ public final class Serializer
                         Object o2 = f.get(o);
                         if (o2 != null && isTanksONable(f))
                         {
-                            p.put(ObjectBuffer.hash(getid(f)), toMap(o2));
+                            p.put(ObjectBuffer.hash(getid(f)), toNumericalMap(o2));
                         }
                         else if (o2 instanceof ArrayList)
                         {
@@ -238,6 +249,8 @@ public final class Serializer
 
     public static String toTanksON(Object o)
     {
+        System.out.println("REF: " + toMap(o));
+        System.out.println("OBJBUF: " + toMap(fromObjBuf(toObjBuf(o))));
         String shebang = "/*TANKSON v" + TANKSON_VERSION + "*/";
         return shebang + TanksON.toString(toMap(o));
     }
@@ -256,6 +269,32 @@ public final class Serializer
         else
         {
             throw new RuntimeException("Unknown TanksON Version " + getVersion(s) + ". You may be running an older version of Tanks with a newer game file.");
+        }
+    }
+
+    public static byte[] toObjBuf(Object o)
+    {
+        String[] version = TANKSON_VERSION.split("\\.");
+        byte[] b = ObjectBuffer.toBytes(toNumericalMap(o));
+        ByteBuffer buf = ByteBuffer.allocate(8 + b.length);
+        buf.putLong(Integer.valueOf(version[0]) << 32 | Integer.valueOf(version[1]));
+        buf.put(b);
+        return buf.array();
+    }
+
+    public static Object fromObjBuf(byte[] b)
+    {
+        if (Game.compareVersions(getVersion(b), TANKSON_VERSION) <= 0)
+        {
+            Object o = ObjectBuffer.parse(Arrays.copyOfRange(b, 8, b.length));
+            if (o instanceof Map)
+                return parseNumericalObject((Map<Long, Object>) o);
+            else
+                throw new RuntimeException("Unexpected type of object: " + o.toString());
+        }
+        else
+        {
+            throw new RuntimeException("Unknown TanksON Version " + getVersion(b) + ". You may be running an older version of Tanks with a newer game file.");
         }
     }
 

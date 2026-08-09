@@ -17,6 +17,7 @@ import java.io.*;
 import java.net.URL;
 import java.nio.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.Buffer;
 import java.util.*;
 import javax.imageio.ImageIO;
 
@@ -556,7 +557,7 @@ public class LWJGLWindow extends BaseWindow
 
                 ByteBuffer buf = ByteBuffer.allocateDirect(4 * decoder.getWidth() * decoder.getHeight());
                 decoder.decode(buf, decoder.getWidth() * 4, Format.RGBA);
-                buf.flip();
+                ((Buffer) buf).flip();
 
                 enableTexture();
                 glEnable(GL_BLEND);
@@ -663,7 +664,7 @@ public class LWJGLWindow extends BaseWindow
             buf.put((byte) 0);
         }
 
-        buf.flip();
+        ((Buffer) buf).flip();
 
         glEnable(GL_TEXTURE_2D);
         glActiveTexture(GL_TEXTURE2);
@@ -692,7 +693,7 @@ public class LWJGLWindow extends BaseWindow
 
             ByteBuffer buf = ByteBuffer.allocateDirect(4 * decoder.getWidth() * decoder.getHeight());
             decoder.decode(buf, decoder.getWidth() * 4, Format.RGBA);
-            buf.flip();
+            ((Buffer) buf).flip();
 
             GLFWImage image = GLFWImage.malloc();
             GLFWImage.Buffer imagebuf = GLFWImage.malloc(1);

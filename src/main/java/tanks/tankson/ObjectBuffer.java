@@ -81,7 +81,7 @@ public class ObjectBuffer
 
     public static long getTag(Type type, long id)
     {
-        return (id << 8) | type.getCode();
+        return (id << 8) | (type.getCode() & 0xFFL);
     }
 
     /** Key for {@link #hash(String)}. Must stay fixed, as hashes are written into serialized files. */
@@ -246,6 +246,7 @@ public class ObjectBuffer
                 {
                     b.writeLong(getTag(Type.IModel, el));
                     b.write(v.toString().getBytes(StandardCharsets.UTF_16));
+                    b.writeLong(0L);
                 }
                 else if (v instanceof AbstractCollection)
                 {
@@ -322,20 +323,19 @@ public class ObjectBuffer
                 {
                     b.writeLong(getTag(Type.STRING, counter));
                     b.write(((String) el).getBytes(StandardCharsets.UTF_16));
-                    b.writeByte(0);
-                    b.writeByte(0);
+                    b.writeShort(0);
                 }
                 else if (el instanceof Enum)
                 {
                     b.writeLong(getTag(Type.ENUM, counter));
                     b.write(el.toString().getBytes(StandardCharsets.UTF_16));
-                    b.writeByte(0);
-                    b.writeByte(0);
+                    b.writeShort(0);
                 }
                 else if (el instanceof IModel)
                 {
                     b.writeLong(getTag(Type.IModel, counter));
                     b.write(el.toString().getBytes(StandardCharsets.UTF_16));
+                    b.writeShort(0);
                 }
                 else if (el instanceof AbstractCollection)
                 {
@@ -383,6 +383,8 @@ public class ObjectBuffer
             while (state.buffer.hasRemaining())
             {
                 Pair<Long, Object> p = state.parse();
+                if (p.getKey() == 0 && p.getValue() == null)
+                    break;
                 result.put(p.getKey(), p.getValue());
             }
             return result;
@@ -459,7 +461,7 @@ public class ObjectBuffer
                         Pair<Long, Object> kv = parse();
                         long k = kv.getKey();
                         Object v = kv.getValue();
-                        if (k == 0 && v == null&& depth == target+1)
+                        if (k == 0 && v == null && depth == target)
                             break;
                         h.put(k,v);
                     }
@@ -473,7 +475,7 @@ public class ObjectBuffer
                         Pair<Long, Object> kv = parse();
                         long k = kv.getKey();
                         Object v = kv.getValue();
-                        if (k == 0 && v == null && depth == target+1)
+                        if (k == 0 && v == null && depth == target)
                             break;
                         a.add(kv.getValue());
                     }
