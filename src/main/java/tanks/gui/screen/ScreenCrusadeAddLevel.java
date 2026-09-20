@@ -35,14 +35,7 @@ public class ScreenCrusadeAddLevel extends ScreenPlaySavedLevels
                 if (Game.loadLevel(file, s))
                 {
                     s.level.buildOverrides.addAll(Game.currentLevel.playerBuilds);
-                    try
-                    {
-                        s.level.levelString = Serializer.toTanksON(Serializer.fromTanksON(Game.currentLevel.levelString));
-                    }
-                    catch (RuntimeException e)
-                    {
-                        s.level.levelString = Game.currentLevel.levelString;
-                    }
+                    s.level.levelString = Serializer.toTanksON(Game.currentLevel);
                     s.level.tanks.addAll(Game.currentLevel.customTanks);
                     Game.screen = s;
                 }

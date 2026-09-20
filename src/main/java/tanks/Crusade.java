@@ -8,7 +8,6 @@ import tanks.item.*;
 import tanks.network.ServerHandler;
 import tanks.network.event.*;
 import tanks.tank.*;
-import tanks.tankson.*;
 
 import java.util.*;
 
@@ -295,17 +294,7 @@ public class Crusade
 
     public void loadLevel()
     {
-        Level l;
-        try
-        {
-            l = (Level) Serializer.fromTanksON(this.levels.get(this.currentLevel).levelString);
-            l.init(customTanks);
-            l.levelString = this.levels.get(this.currentLevel).levelString;
-        }
-        catch (RuntimeException e)
-        {
-            l = new Level(this.levels.get(this.currentLevel).levelString, customTanks);
-        }
+        Level l = Level.fromString(this.levels.get(this.currentLevel).levelString, customTanks);
 
         Game.player.hotbar.enabledCoins = true;
         Game.player.hotbar.itemBar.showItems = true;

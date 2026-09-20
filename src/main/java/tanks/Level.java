@@ -28,7 +28,6 @@ public class Level
     public ArrayList<Obstacle> obstacles;
     @Property(id = "obstacles", name = "Obstacles")
     public ArrayList<ArrayList<String>> obstaclesIR;
-    public boolean enableTeams = false;
 
     public static Color currentColor = new Color(235, 207, 166);
     public static Color currentColorVar = new Color(235, 207, 166);
@@ -66,6 +65,7 @@ public class Level
     public double light = 1.0;
     @Property(id = "shadow", name = "Shadow")
     public double shadow = 0.5;
+    @Property(id = "light_color", name = "Light Color")
     public Color lightColor = new Color(255, 255, 255);
 
     @Property(id = "teams", name = "Teams")
@@ -156,8 +156,10 @@ public class Level
         String[] tanks = new String[0];
         String[] teams;
 
-        if (ScreenPartyHost.isServer)
-            this.startTime = Game.partyStartTime;
+        // Levels from before teams existed leave them out of the level string;
+        // their tanks are given the default teams below so that the rest of the
+        // game can assume every level has teams.
+        boolean teamsDeclared = false;
 
         this.levelString = level.replaceAll("\u0000", "");
 
@@ -226,7 +228,7 @@ public class Level
 
                 if (preset.length >= 4)
                 {
-                    enableTeams = true;
+                    teamsDeclared = true;
                     teams = preset[3].split(",");
                     tankTeams = new Team[teams.length];
 
@@ -267,12 +269,6 @@ public class Level
                     screen[0] = screen[0].substring(1);
                 }
             }
-        }
-
-        if (TankModels.tank != null && playerBuilds.isEmpty())
-        {
-            TankPlayer.ShopTankBuild tp = new TankPlayer.ShopTankBuild();
-            playerBuilds.add(tp);
         }
 
         sizeX = (int) Double.parseDouble(screen[0]);
@@ -391,6 +387,9 @@ public class Level
             {
                 String[] tank = s.split("-");
 
+                if (!teamsDeclared)
+                    tank = withDefaultTeam(tank);
+
                 ArrayList<String> tankIR = new ArrayList<>();
                 tankIR.add(tank[0]); //X Coordinate
                 tankIR.add(tank[1]); //Y Coordinate
@@ -417,28 +416,14 @@ public class Level
                 if (tank.length >= 4)
                     angle = (Math.PI / 2 * Double.parseDouble(tank[3]));
 
-                Team team = Game.enemyTeam;
+                Team team = null;
 
-                if (this.disableFriendlyFire)
-                    team = Game.enemyTeamNoFF;
-
-                if (enableTeams)
-                {
-                    if (tank.length >= 5)
-                        team = teamsMap.get(tank[4]);
-                    else
-                        team = null;
-                }
+                if (tank.length >= 5)
+                    team = teamsMap.get(tank[4]);
 
                 Tank t;
                 if (type.equals("player"))
                 {
-                    if (team == Game.enemyTeam)
-                        team = Game.playerTeam;
-
-                    if (team == Game.enemyTeamNoFF)
-                        team = Game.playerTeamNoFF;
-
                     this.playerSpawnsX.add(x);
                     this.playerSpawnsY.add(y);
                     this.playerSpawnsAngle.add(angle);
@@ -472,6 +457,143 @@ public class Level
                 }
             }
         }
+
+        this.commonInit();
+    }
+
+    /**
+     * Parses a level string in either the TanksON or the legacy format, and initializes it.
+     * Use this for any level string that comes from a file, a crusade, the network, or a player -
+     * the {@link Level#Level(String)} constructors only understand the legacy format.
+     */
+    public static Level fromString(String level)
+    {
+        return fromString(level, new ArrayList<>(), false, ScreenPartyHost.isServer && Game.disablePartyFriendlyFire);
+    }
+
+    public static Level fromString(String level, boolean remote)
+    {
+        return fromString(level, new ArrayList<>(), remote, ScreenPartyHost.isServer && Game.disablePartyFriendlyFire);
+    }
+
+    public static Level fromString(String level, ArrayList<TankAIControlled> customTanks)
+    {
+        return fromString(level, customTanks, false, ScreenPartyHost.isServer && Game.disablePartyFriendlyFire);
+    }
+
+    public static Level fromString(String level, ArrayList<TankAIControlled> customTanks, boolean remote, boolean disableFriendlyFire)
+    {
+        if (!isTanksON(level))
+            return new Level(level, customTanks, remote, disableFriendlyFire);
+
+        Level l = parseTanksON(level);
+        l.init(customTanks, remote, disableFriendlyFire);
+        return l;
+    }
+
+    /**
+     * Parses a level string in either format, for inspecting or rewriting a level rather than
+     * playing it. Unlike {@link #fromString}, a TanksON level is left uninitialized, so its
+     * obstacles and tanks are not instantiated. (A legacy level is still parsed in full.)
+     */
+    public static Level parse(String level)
+    {
+        if (!isTanksON(level))
+            return new Level(level);
+
+        return parseTanksON(level);
+    }
+
+    protected static Level parseTanksON(String level)
+    {
+        Level l = (Level) Serializer.fromTanksON(level);
+        l.levelString = level;
+        return l;
+    }
+
+    /** Whether a level string is in the TanksON format, as opposed to the legacy format. */
+    public static boolean isTanksON(String level)
+    {
+        if (level == null)
+            return false;
+
+        int i = 0;
+        while (i < level.length())
+        {
+            char c = level.charAt(i);
+
+            if (Character.isWhitespace(c))
+                i++;
+            else if (c == '/' && i + 1 < level.length() && level.charAt(i + 1) == '*')
+            {
+                // Skip the TanksON shebang, or any other leading comment
+                int end = level.indexOf("*/", i + 2);
+                if (end < 0)
+                    return false;
+
+                i = end + 2;
+            }
+            else
+                break;
+        }
+
+        // A TanksON level opens with a key, while a legacy level opens with its dimensions
+        return i + 1 < level.length() && level.charAt(i) == '{' && level.charAt(i + 1) == '"';
+    }
+
+    /**
+     * Gives a legacy tank entry, from a level string with no teams section, the team it would
+     * have been put on before levels could name their own teams.
+     */
+    protected static String[] withDefaultTeam(String[] tank)
+    {
+        if (tank.length >= 5)
+            return tank;
+
+        String[] out = new String[5];
+        System.arraycopy(tank, 0, out, 0, tank.length);
+
+        if (tank.length < 4)
+            out[3] = "0";
+
+        out[4] = tank[2].equalsIgnoreCase("player") ? "ally" : "enemy";
+        return out;
+    }
+
+    /**
+     * Levels which don't name their own teams share the global default team objects.
+     * The level editor can edit teams, so give the level its own copies of them first.
+     */
+    public void ownDefaultTeams()
+    {
+        for (Map.Entry<String, Team> e: this.teamsMap.entrySet())
+        {
+            Team t = e.getValue();
+
+            if (t != Game.playerTeam && t != Game.enemyTeam && t != Game.playerTeamNoFF && t != Game.enemyTeamNoFF)
+                continue;
+
+            Team copy = new Team(t.name, t.friendlyFire);
+            e.setValue(copy);
+
+            for (Movable m: Game.movables)
+            {
+                if (m.team == t)
+                    m.team = copy;
+            }
+        }
+    }
+
+    public void commonInit()
+    {
+        if (ScreenPartyHost.isServer)
+            this.startTime = Game.partyStartTime;
+
+        if (TankModels.tank != null && this.playerBuilds.isEmpty())
+            this.playerBuilds.add(new TankPlayer.ShopTankBuild());
+
+        // Item numbers are how items are referred to over the network
+        this.itemNumbers.clear();
 
         for (int i = 0; i < this.shop.size(); i++)
         {
@@ -528,6 +650,12 @@ public class Level
                 teamsMap.put("enemy", Game.enemyTeam);
             }
         }
+        else if (disableFriendlyFire)
+        {
+            // These teams came out of the level itself, so they're ours to turn friendly fire off on
+            for (Team t: teamsMap.values())
+                t.friendlyFire = false;
+        }
 
         for (ArrayList<String> obs: obstaclesIR)
         {
@@ -538,11 +666,15 @@ public class Level
             double startY = Double.parseDouble(ys[0]);
             double endY = (ys.length > 1 ? Double.parseDouble(ys[1]) : startY) + 1;
 
+            // A legacy level leaves the name out for a plain block, and save() writes it
+            // as empty, so both mean "normal" here
+            String name = obs.size() >= 3 && !obs.get(2).isEmpty() ? obs.get(2) : "normal";
+
             for (double x = startX; x < endX; x++)
             {
                 for (double y = startY; y < endY; y++)
                 {
-                    Obstacle o = Game.registryObstacle.getEntry(obs.get(2)).getObstacle(x, y);
+                    Obstacle o = Game.registryObstacle.getEntry(name).getObstacle(x, y);
 
                     if (obs.size() >= 4)
                         o.setMetadata(obs.get(3));
@@ -586,28 +718,14 @@ public class Level
             if (tank.length >= 4)
                 angle = (Math.PI / 2 * Double.parseDouble(tank[3]));
 
-            Team team = Game.enemyTeam;
+            Team team = null;
 
-            if (this.disableFriendlyFire)
-                team = Game.enemyTeamNoFF;
-
-            if (enableTeams)
-            {
-                if (tank.length >= 5)
-                    team = teamsMap.get(tank[4]);
-                else
-                    team = null;
-            }
+            if (tank.length >= 5)
+                team = teamsMap.get(tank[4]);
 
             Tank t;
             if (type.equals("player"))
             {
-                if (team == Game.enemyTeam)
-                    team = Game.playerTeam;
-
-                if (team == Game.enemyTeamNoFF)
-                    team = Game.playerTeamNoFF;
-
                 this.playerSpawnsX.add(x);
                 this.playerSpawnsY.add(y);
                 this.playerSpawnsAngle.add(angle);
@@ -641,11 +759,7 @@ public class Level
             }
         }
 
-        if (TankModels.tank != null && playerBuilds.isEmpty())
-        {
-            TankPlayer.ShopTankBuild tp = new TankPlayer.ShopTankBuild();
-            playerBuilds.add(tp);
-        }
+        this.commonInit();
     }
 
     protected static ArrayList<String> getJsonObjects(String s)
@@ -951,24 +1065,7 @@ public class Level
         if (sc instanceof ScreenLevelEditor)
         {
             ScreenLevelEditor s = (ScreenLevelEditor) sc;
-            if (!enableTeams)
-            {
-                enableTeams = true;
-
-                Team player = new Team(Game.playerTeam.name);
-                Team enemy = new Team(Game.enemyTeam.name);
-
-                for (Movable m: Game.movables)
-                {
-                    if (m.team == Game.playerTeam)
-                        m.team = player;
-                    else if (m.team == Game.enemyTeam)
-                        m.team = enemy;
-                }
-
-                teamsMap.put("ally", player);
-                teamsMap.put("enemy", enemy);
-            }
+            this.ownDefaultTeams();
 
             s.teams = new ArrayList<>(teamsMap.values());
             if (s.teams.size() > 0)
@@ -1452,6 +1549,7 @@ public class Level
             }
         }
 
-        return Serializer.toTanksON(this);
+        this.levelString = Serializer.toTanksON(this);
+        return this.levelString;
     }
 }
