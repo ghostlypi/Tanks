@@ -1738,12 +1738,13 @@ public class ScreenLevelEditor extends Screen implements ILevelPreviewScreen
 
     public void save(String levelName)
     {
-        this.new_save(levelName);
+        this.newSave(levelName);
     }
 
-    public void new_save(String levelName)
+    public void newSave(String levelName)
     {
-        Game.currentLevelString = this.level.save();
+        String level = this.level.save();
+        Game.currentLevelString = level;
 
         BaseFile file = Game.game.fileManager.getFile(Game.homedir + Game.levelDir + "/" + levelName);
         if (file.exists())
@@ -1759,7 +1760,7 @@ public class ScreenLevelEditor extends Screen implements ILevelPreviewScreen
             file.create();
 
             file.startWriting();
-            file.println(Serializer.toTanksON(this.level));
+            file.println(level);
             file.stopWriting();
         }
         catch (IOException e)
@@ -1768,7 +1769,7 @@ public class ScreenLevelEditor extends Screen implements ILevelPreviewScreen
         }
     }
 
-    public void legacy_save(String levelName)
+    public void legacySave(String levelName)
     {
         StringBuilder level = new StringBuilder("{");
 

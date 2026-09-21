@@ -20,12 +20,21 @@ public class Level
 {
     public String levelString;
 
+    /**
+     * Tanks IR representation is a way to store tank instances in a dense format.
+     * Parentheses denote required values and brackets denote the start and end of a list.
+     * Asterisks indicate that the parameter can be repeated, separated by commas.<br>
+     * [[(X),(Y),(Name),(Angle),(Team)]*]
+     *
+     * */
     @Property(id = "tank_pos", name = "Tank Positions")
     public ArrayList<ArrayList<String>> tanksIR;
+
     public ArrayList<Tank> tanks;
     ArrayList<Tank> tanksToRemove;
     public Team[] tankTeams;
     public ArrayList<Obstacle> obstacles;
+
     @Property(id = "obstacles", name = "Obstacles")
     public ArrayList<ArrayList<String>> obstaclesIR;
 
@@ -271,6 +280,12 @@ public class Level
             }
         }
 
+        if (TankModels.tank != null && playerBuilds.isEmpty())
+        {
+            TankPlayer.ShopTankBuild tp = new TankPlayer.ShopTankBuild();
+            playerBuilds.add(tp);
+        }
+
         sizeX = (int) Double.parseDouble(screen[0]);
         sizeY = (int) Double.parseDouble(screen[1]);
 
@@ -311,8 +326,8 @@ public class Level
                 String[] obs = obstaclesPo.split("-");
 
                 ArrayList<String> obsIR = new ArrayList<>();
-                obsIR.add(obs[0].replace("...", ":")); //X Coordinate (changed to sliced notation)
-                obsIR.add(obs[1].replace("...", ":")); //Y Coordinate (changed to sliced notation)
+                obsIR.add(obs[0].replace("...", ":")); //X Coordinate (in sliced notation)
+                obsIR.add(obs[1].replace("...", ":")); //Y Coordinate (in sliced notation)
                 if (obs.length >= 3)
                     obsIR.add(obs[2]); //Name
                 if (obs.length >= 4)
@@ -394,10 +409,8 @@ public class Level
                 tankIR.add(tank[0]); //X Coordinate
                 tankIR.add(tank[1]); //Y Coordinate
                 tankIR.add(tank[2]); //Name
-                if (tank.length >= 4)
-                    tankIR.add(tank[3]); //Angle
-                if (tank.length >= 5)
-                    tankIR.add(tank[4]); //Team
+                tankIR.add(tank[3]); //Angle
+                tankIR.add(tank[4]); //Team
                 tanksIR.add(tankIR);
 
                 double x = Game.tile_size * (0.5 + Double.parseDouble(tank[0]));
@@ -564,7 +577,7 @@ public class Level
      * Levels which don't name their own teams share the global default team objects.
      * The level editor can edit teams, so give the level its own copies of them first.
      */
-    public void ownDefaultTeams()
+    public void populateDefaultTeams()
     {
         for (Map.Entry<String, Team> e: this.teamsMap.entrySet())
         {
