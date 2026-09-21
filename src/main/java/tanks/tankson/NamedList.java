@@ -5,23 +5,28 @@ import java.util.*;
 /** A map of TanksONable objects keyed by their own {@code @Property(id = "name")} value. */
 public class NamedList<T> extends LinkedHashMap<String, T> implements Serializable
 {
-    public NamedList(){
+    public NamedList()
+    {
         super();
     }
 
-    public NamedList(int initialCapacity){
+    public NamedList(int initialCapacity)
+    {
         super(initialCapacity);
     }
 
-    public NamedList(int initialCapacity, float loadFactor){
+    public NamedList(int initialCapacity, float loadFactor)
+    {
         super(initialCapacity, loadFactor);
     }
 
-    public NamedList(int initialCapacity, float loadFactor, boolean accessOrder){
+    public NamedList(int initialCapacity, float loadFactor, boolean accessOrder)
+    {
         super(initialCapacity, loadFactor, accessOrder);
     }
 
-    public NamedList(Map<? extends String, ? extends T> m){
+    public NamedList(Map<? extends String, ? extends T> m)
+    {
         super(m);
     }
 
