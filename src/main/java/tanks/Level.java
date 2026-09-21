@@ -78,7 +78,7 @@ public class Level
     public Color lightColor = new Color(255, 255, 255);
 
     @Property(id = "teams", name = "Teams")
-    public LinkedHashMap<String, Team> teamsMap = new LinkedHashMap<>();
+    public NamedList<Team> teamsMap = new NamedList<>();
 
     public ArrayList<Integer> availablePlayerSpawns = new ArrayList<>();
 
@@ -550,8 +550,16 @@ public class Level
                 break;
         }
 
+        if (i >= level.length() || level.charAt(i) != '{')
+            return false;
+
+        // A pretty-printed level breaks the line after the brace
+        i++;
+        while (i < level.length() && Character.isWhitespace(level.charAt(i)))
+            i++;
+
         // A TanksON level opens with a key, while a legacy level opens with its dimensions
-        return i + 1 < level.length() && level.charAt(i) == '{' && level.charAt(i + 1) == '"';
+        return i < level.length() && level.charAt(i) == '"';
     }
 
     /**
@@ -1078,7 +1086,7 @@ public class Level
         if (sc instanceof ScreenLevelEditor)
         {
             ScreenLevelEditor s = (ScreenLevelEditor) sc;
-            this.ownDefaultTeams();
+            this.populateDefaultTeams();
 
             s.teams = new ArrayList<>(teamsMap.values());
             if (s.teams.size() > 0)
