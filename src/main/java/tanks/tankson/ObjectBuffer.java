@@ -2,17 +2,14 @@ package tanks.tankson;
 
 import basewindow.Color;
 import basewindow.IModel;
-import javafx.util.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractCollection;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.*;
+import java.util.AbstractMap.SimpleImmutableEntry;
 
 public class ObjectBuffer
 {
@@ -118,10 +115,20 @@ public class ObjectBuffer
             for (int r = 0; r < 2; r++)
             {
                 // inlined round, as Java has no way to pass these back out of a call
-                v0 += v1; v1 = Long.rotateLeft(v1, 13); v1 ^= v0; v0 = Long.rotateLeft(v0, 32);
-                v2 += v3; v3 = Long.rotateLeft(v3, 16); v3 ^= v2;
-                v0 += v3; v3 = Long.rotateLeft(v3, 21); v3 ^= v0;
-                v2 += v1; v1 = Long.rotateLeft(v1, 17); v1 ^= v2; v2 = Long.rotateLeft(v2, 32);
+                v0 += v1;
+                v1 = Long.rotateLeft(v1, 13);
+                v1 ^= v0;
+                v0 = Long.rotateLeft(v0, 32);
+                v2 += v3;
+                v3 = Long.rotateLeft(v3, 16);
+                v3 ^= v2;
+                v0 += v3;
+                v3 = Long.rotateLeft(v3, 21);
+                v3 ^= v0;
+                v2 += v1;
+                v1 = Long.rotateLeft(v1, 17);
+                v1 ^= v2;
+                v2 = Long.rotateLeft(v2, 32);
             }
             v0 ^= w;
         }
@@ -132,20 +139,40 @@ public class ObjectBuffer
         v3 ^= last;
         for (int r = 0; r < 2; r++)
         {
-            v0 += v1; v1 = Long.rotateLeft(v1, 13); v1 ^= v0; v0 = Long.rotateLeft(v0, 32);
-            v2 += v3; v3 = Long.rotateLeft(v3, 16); v3 ^= v2;
-            v0 += v3; v3 = Long.rotateLeft(v3, 21); v3 ^= v0;
-            v2 += v1; v1 = Long.rotateLeft(v1, 17); v1 ^= v2; v2 = Long.rotateLeft(v2, 32);
+            v0 += v1;
+            v1 = Long.rotateLeft(v1, 13);
+            v1 ^= v0;
+            v0 = Long.rotateLeft(v0, 32);
+            v2 += v3;
+            v3 = Long.rotateLeft(v3, 16);
+            v3 ^= v2;
+            v0 += v3;
+            v3 = Long.rotateLeft(v3, 21);
+            v3 ^= v0;
+            v2 += v1;
+            v1 = Long.rotateLeft(v1, 17);
+            v1 ^= v2;
+            v2 = Long.rotateLeft(v2, 32);
         }
         v0 ^= last;
 
         v2 ^= 0xFF;
         for (int r = 0; r < 4; r++)
         {
-            v0 += v1; v1 = Long.rotateLeft(v1, 13); v1 ^= v0; v0 = Long.rotateLeft(v0, 32);
-            v2 += v3; v3 = Long.rotateLeft(v3, 16); v3 ^= v2;
-            v0 += v3; v3 = Long.rotateLeft(v3, 21); v3 ^= v0;
-            v2 += v1; v1 = Long.rotateLeft(v1, 17); v1 ^= v2; v2 = Long.rotateLeft(v2, 32);
+            v0 += v1;
+            v1 = Long.rotateLeft(v1, 13);
+            v1 ^= v0;
+            v0 = Long.rotateLeft(v0, 32);
+            v2 += v3;
+            v3 = Long.rotateLeft(v3, 16);
+            v3 ^= v2;
+            v0 += v3;
+            v3 = Long.rotateLeft(v3, 21);
+            v3 ^= v0;
+            v2 += v1;
+            v1 = Long.rotateLeft(v1, 17);
+            v1 ^= v2;
+            v2 = Long.rotateLeft(v2, 32);
         }
 
         return (v0 ^ v1 ^ v2 ^ v3) << 8 >> 8;
@@ -185,7 +212,7 @@ public class ObjectBuffer
             {
                 Object v = h.get(el);
 
-                if(v == null)
+                if (v == null)
                 {
                     b.writeLong(getTag(Type.NULL, el));
                 }
@@ -276,7 +303,7 @@ public class ObjectBuffer
             long counter = 0;
             for (Object el: c)
             {
-                if(el == null)
+                if (el == null)
                 {
                     b.writeLong(getTag(Type.NULL, counter));
                 }
@@ -382,7 +409,7 @@ public class ObjectBuffer
             HashMap<Long, Object> result = new HashMap<>();
             while (state.buffer.hasRemaining())
             {
-                Pair<Long, Object> p = state.parse();
+                Map.Entry<Long, Object> p = state.parse();
                 if (p.getKey() == 0 && p.getValue() == null)
                     break;
                 result.put(p.getKey(), p.getValue());
@@ -390,7 +417,7 @@ public class ObjectBuffer
             return result;
         }
 
-        public Pair<Long, Object> parse()
+        public Map.Entry<Long, Object> parse()
         {
             long tag = buffer.getLong();
             long id = getId(tag);
@@ -401,30 +428,30 @@ public class ObjectBuffer
                 {
                     if (getId(tag) == 0)
                         depth--;
-                    return new Pair<>(id, null);
+                    return new SimpleImmutableEntry<>(id, null);
                 }
                 case TRUE:
-                    return new Pair<>(id, true);
+                    return new SimpleImmutableEntry<>(id, true);
                 case FALSE:
-                    return new Pair<>(id, false);
+                    return new SimpleImmutableEntry<>(id, false);
                 case INF:
-                    return new Pair<>(id, Double.POSITIVE_INFINITY);
+                    return new SimpleImmutableEntry<>(id, Double.POSITIVE_INFINITY);
 
                 //Integers
                 case CHAR:
-                    return new Pair<>(id, buffer.getChar());
+                    return new SimpleImmutableEntry<>(id, buffer.getChar());
                 case SHORT:
-                    return new Pair<>(id, buffer.getShort());
+                    return new SimpleImmutableEntry<>(id, buffer.getShort());
                 case INT:
-                    return new Pair<>(id, buffer.getInt());
+                    return new SimpleImmutableEntry<>(id, buffer.getInt());
                 case LONG:
-                    return new Pair<>(id, buffer.getLong());
+                    return new SimpleImmutableEntry<>(id, buffer.getLong());
 
                 //Float
                 case FLOAT:
-                    return new Pair<>(id, buffer.getFloat());
+                    return new SimpleImmutableEntry<>(id, buffer.getFloat());
                 case DOUBLE:
-                    return new Pair<>(id, buffer.getDouble());
+                    return new SimpleImmutableEntry<>(id, buffer.getDouble());
 
                 //Variable Length
                 case ENUM:
@@ -438,7 +465,7 @@ public class ObjectBuffer
                             break;
                         sb.append(new String(new byte[]{b1, b2}, StandardCharsets.UTF_16));
                     }
-                    return new Pair<>(id, sb.toString());
+                    return new SimpleImmutableEntry<>(id, sb.toString());
                 }
                 case STRING:
                 {
@@ -451,42 +478,44 @@ public class ObjectBuffer
                             break;
                         sb.append(new String(new byte[]{b1, b2}, StandardCharsets.UTF_16));
                     }
-                    return new Pair<>(id, sb.toString());
+                    return new SimpleImmutableEntry<>(id, sb.toString());
                 }
                 case OBJECT:
                 {
                     HashMap<Long, Object> h = new HashMap<>();
                     int target = depth++;
-                    while(depth > target) {
-                        Pair<Long, Object> kv = parse();
+                    while (depth > target)
+                    {
+                        Map.Entry<Long, Object> kv = parse();
                         long k = kv.getKey();
                         Object v = kv.getValue();
                         if (k == 0 && v == null && depth == target)
                             break;
-                        h.put(k,v);
+                        h.put(k, v);
                     }
-                    return new Pair<>(id, h);
+                    return new SimpleImmutableEntry<>(id, h);
                 }
                 case LIST:
                 {
                     ArrayList<Object> a = new ArrayList<>();
                     int target = depth++;
-                    while(depth > target) {
-                        Pair<Long, Object> kv = parse();
+                    while (depth > target)
+                    {
+                        Map.Entry<Long, Object> kv = parse();
                         long k = kv.getKey();
                         Object v = kv.getValue();
                         if (k == 0 && v == null && depth == target)
                             break;
                         a.add(kv.getValue());
                     }
-                    return new Pair<>(id, a);
+                    return new SimpleImmutableEntry<>(id, a);
                 }
 
                 //Tanks Specific Objects
                 case COLOR:
                 {
                     Color c = new Color(buffer.getDouble(), buffer.getDouble(), buffer.getDouble(), buffer.getDouble());
-                    return new Pair<>(id, c);
+                    return new SimpleImmutableEntry<>(id, c);
                 }
                 case IModel:
                 {
@@ -499,7 +528,7 @@ public class ObjectBuffer
                             break;
                         sb.append(new String(new byte[]{b1, b2}, StandardCharsets.UTF_16));
                     }
-                    return new Pair<>(id, sb.toString());
+                    return new SimpleImmutableEntry<>(id, sb.toString());
                 }
 
                 default:

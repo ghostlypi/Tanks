@@ -7,11 +7,11 @@ import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.system.MemoryStack;
 
 import java.io.*;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.Buffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;

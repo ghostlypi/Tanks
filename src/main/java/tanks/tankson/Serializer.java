@@ -685,7 +685,8 @@ public final class Serializer
             case "spawned_tank":
                 processed.add(ObjectBuffer.hash("tank"));
                 processed.add(ObjectBuffer.hash("weight"));
-                o = new TankAIControlled.SpawnedTankEntry((ITankField) parseNumericalObject((Map<Long, Object>) m.get(ObjectBuffer.hash("tank"))), (Double) m.get(ObjectBuffer.hash("weight")));
+                o = new TankAIControlled.SpawnedTankEntry((ITankField) parseNumericalObject((Map<Long, Object>) m.get(ObjectBuffer.hash("tank"))),
+                    (Double) m.get(ObjectBuffer.hash("weight")));
                 break;
             case "tank_ref":
                 processed.add(ObjectBuffer.hash("tank"));
