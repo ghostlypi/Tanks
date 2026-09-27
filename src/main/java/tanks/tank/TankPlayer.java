@@ -228,6 +228,15 @@ public class TankPlayer extends TankPlayable implements ILocalPlayerTank, IServe
                 if (intensity >= 0.2)
                     a = controlStick.inputAngle;
             }
+            else if (a < 0 && Game.game.window.gamepadConnected)
+            {
+                double gx = Game.game.window.gamepadMoveX;
+                double gy = Game.game.window.gamepadMoveY;
+                intensity = Math.min(1, Math.sqrt(gx * gx + gy * gy));
+
+                if (intensity >= 0.2)
+                    a = (Math.atan2(gy, gx) + Math.PI * 2) % (Math.PI * 2);
+            }
 
             if (a >= 0 && intensity >= 0.2)
             {

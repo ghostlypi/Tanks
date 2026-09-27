@@ -40,6 +40,15 @@ public abstract class BaseWindow
 
     public boolean constrainMouse;
 
+    public boolean gamepadConnected = false;
+    /** True while the gamepad is driving the mouse pointer instead of the real mouse */
+    public boolean gamepadPointerActive = false;
+    /** When true, the left stick also moves the pointer (used outside of gameplay, where it is not needed for movement) */
+    public boolean gamepadLeftStickPointer = true;
+    /** Left stick position after the deadzone, from -1 to 1 */
+    public double gamepadMoveX;
+    public double gamepadMoveY;
+
     public double colorR;
     public double colorG;
     public double colorB;

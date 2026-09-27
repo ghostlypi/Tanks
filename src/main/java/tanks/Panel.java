@@ -269,6 +269,10 @@ public class Panel
             }
         }
 
+        // During gameplay the left stick drives the tank, so only the right stick moves the pointer
+        Game.game.window.gamepadLeftStickPointer = !(Game.screen instanceof ScreenGame && ((ScreenGame) Game.screen).playing
+            && !((ScreenGame) Game.screen).paused && Game.playerTank != null && !Game.playerTank.destroy);
+
         this.frameStartTime = System.currentTimeMillis();
 
         if (firstFrame)

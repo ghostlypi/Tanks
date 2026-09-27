@@ -582,14 +582,25 @@ public class SoundPlayer extends BaseSoundPlayer
 
     public void exit()
     {
+        // Sources and buffers must be released while the context is still current,
+        // and the context must be released before it is destroyed, or OpenAL can crash at process exit
+        alcMakeContextCurrent(context);
+
+        for (int i: this.sources)
+            alDeleteSources(i);
+
+        for (int i: this.musicSources)
+            alDeleteSources(i);
+
+        for (int i: this.buffers.values())
+            alDeleteBuffers(i);
+
+        for (int i: this.musicBuffers.values())
+            alDeleteBuffers(i);
+
+        alcMakeContextCurrent(0);
         alcDestroyContext(context);
         alcCloseDevice(device);
-
-        for (String s: this.buffers.keySet())
-        {
-            int i = this.buffers.get(s);
-            alDeleteBuffers(i);
-        }
     }
 
     @Override

@@ -107,6 +107,8 @@ public class LWJGLWindow extends BaseWindow
         this.antialiasingSupported = true;
     }
 
+    protected GamepadHandler gamepadHandler = new GamepadHandler(this);
+
     public long getWindow()
     {
         return this.window;
@@ -360,7 +362,13 @@ public class LWJGLWindow extends BaseWindow
         String audio = ALC11.alcGetString(NULL, ALC11.ALC_DEFAULT_ALL_DEVICES_SPECIFIER);
 
         if (!(audio == null && this.audioDevice == null || (this.audioDevice != null && this.audioDevice.equals(audio))))
+        {
+            // Close the old device first so it is not left open when the process exits
+            if (this.soundPlayer instanceof SoundPlayer)
+                this.soundPlayer.exit();
+
             this.soundPlayer = new SoundPlayer(this);
+        }
 
         this.audioDevice = audio;
 
@@ -387,6 +395,8 @@ public class LWJGLWindow extends BaseWindow
         absoluteMouseY = my[0];
 
         focused = glfwGetWindowAttrib(window, GLFW_FOCUSED) == GLFW_TRUE;
+
+        this.gamepadHandler.update(Math.min(0.1, this.frameFrequency / 100));
 
         if (constrainMouse)
         {
