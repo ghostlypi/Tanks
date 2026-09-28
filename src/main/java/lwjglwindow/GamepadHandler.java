@@ -58,12 +58,11 @@ public class GamepadHandler
         this.window = window;
 
         buttonMouse.put(GLFW_GAMEPAD_BUTTON_A, InputCodes.MOUSE_BUTTON_1);
-        buttonMouse.put(GLFW_GAMEPAD_BUTTON_X, InputCodes.MOUSE_BUTTON_2);
         buttonKeys.put(GLFW_GAMEPAD_BUTTON_B, InputCodes.KEY_ESCAPE);
         buttonKeys.put(GLFW_GAMEPAD_BUTTON_START, InputCodes.KEY_ESCAPE);
         buttonKeys.put(GLFW_GAMEPAD_BUTTON_Y, InputCodes.KEY_LEFT_SHIFT);
         buttonKeys.put(GLFW_GAMEPAD_BUTTON_BACK, InputCodes.KEY_TAB);
-        buttonKeys.put(GLFW_GAMEPAD_BUTTON_LEFT_THUMB, InputCodes.KEY_PERIOD);
+        buttonKeys.put(GLFW_GAMEPAD_BUTTON_X, InputCodes.KEY_PERIOD);
         buttonKeys.put(GLFW_GAMEPAD_BUTTON_RIGHT_THUMB, InputCodes.KEY_I);
         buttonKeys.put(GLFW_GAMEPAD_BUTTON_DPAD_UP, InputCodes.KEY_UP);
         buttonKeys.put(GLFW_GAMEPAD_BUTTON_DPAD_DOWN, InputCodes.KEY_DOWN);
@@ -135,8 +134,9 @@ public class GamepadHandler
             if (state.axes(GLFW_GAMEPAD_AXIS_LEFT_TRIGGER) > triggerThreshold && !buttons.contains(InputCodes.MOUSE_BUTTON_2))
                 buttons.add(InputCodes.MOUSE_BUTTON_2);
 
-            scrollUp = state.buttons(GLFW_GAMEPAD_BUTTON_LEFT_BUMPER) == GLFW_PRESS;
-            scrollDown = state.buttons(GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER) == GLFW_PRESS;
+            // Scrolling down selects the next hotbar item, so the right bumper scrolls down
+            scrollUp = state.buttons(GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER) == GLFW_PRESS;
+            scrollDown = state.buttons(GLFW_GAMEPAD_BUTTON_LEFT_BUMPER) == GLFW_PRESS;
         }
 
         applyHeld(keys, heldKeys, window.pressedKeys, window.validPressedKeys, true);
