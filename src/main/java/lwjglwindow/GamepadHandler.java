@@ -23,6 +23,15 @@ public class GamepadHandler
     /** Pointer speed at full stick deflection, in fractions of the window's larger dimension per second */
     public static double pointerSpeed = 1.2;
 
+    /** Set the TANKS_GAMEPAD_DEBUG environment variable to log detected joysticks and every button/axis change */
+    public static final boolean debug = System.getenv("TANKS_GAMEPAD_DEBUG") != null;
+
+    protected static final String[] buttonNames = {"A", "B", "X", "Y", "LB", "RB", "Back/View", "Start/Menu", "Guide",
+        "L3", "R3", "DPad Up", "DPad Right", "DPad Down", "DPad Left"};
+    protected static final String[] axisNames = {"Left X", "Left Y", "Right X", "Right Y", "LT", "RT"};
+    protected final boolean[] debugButtons = new boolean[buttonNames.length];
+    protected final int[] debugAxes = new int[axisNames.length];
+
     protected final LWJGLWindow window;
     protected final GLFWGamepadState state = GLFWGamepadState.create();
 
@@ -90,6 +99,9 @@ public class GamepadHandler
             joystick = j;
             if (j >= 0)
                 System.out.println("Gamepad connected: " + glfwGetGamepadName(j));
+
+            if (debug)
+                logJoysticks();
         }
 
         ArrayList<Integer> keys = new ArrayList<>();
@@ -98,6 +110,9 @@ public class GamepadHandler
         boolean scrollDown = false;
 
         window.gamepadConnected = joystick >= 0 && glfwGetGamepadState(joystick, state);
+
+        if (debug && window.gamepadConnected)
+            logState();
 
         if (window.gamepadConnected)
         {
@@ -225,6 +240,40 @@ public class GamepadHandler
         {
             window.absoluteMouseX = pointerX;
             window.absoluteMouseY = pointerY;
+        }
+    }
+
+    protected void logJoysticks()
+    {
+        for (int i = GLFW_JOYSTICK_1; i <= GLFW_JOYSTICK_LAST; i++)
+        {
+            if (glfwJoystickPresent(i))
+                System.out.println("[gamepad] joystick " + i + ": " + glfwGetJoystickName(i) + " guid=" + glfwGetJoystickGUID(i)
+                    + " gamepad mapping=" + glfwJoystickIsGamepad(i));
+        }
+    }
+
+    protected void logState()
+    {
+        for (int b = 0; b < buttonNames.length; b++)
+        {
+            boolean pressed = state.buttons(b) == GLFW_PRESS;
+            if (pressed != debugButtons[b])
+            {
+                debugButtons[b] = pressed;
+                System.out.println("[gamepad] button " + buttonNames[b] + (pressed ? " down" : " up"));
+            }
+        }
+
+        for (int a = 0; a < axisNames.length; a++)
+        {
+            // Log in steps of 0.25 so the output stays readable
+            int bucket = Math.round(state.axes(a) * 4);
+            if (bucket != debugAxes[a])
+            {
+                debugAxes[a] = bucket;
+                System.out.println("[gamepad] axis " + axisNames[a] + " = " + String.format("%.2f", state.axes(a)));
+            }
         }
     }
 
